@@ -7,23 +7,17 @@ class("player",
 function player:init(entity)
     player.super.init(self,entity)
 
-
+    self.input = new_input_listener()
 end
 
 function player:update()
     local x,y  = 0,0
     local speed = 1
-
-    -- if pd.buttonIsPressed(pd.kButtonUp) then
-    --     y -= 1
-    -- end
-    -- if pd.buttonIsPressed(pd.kButtonDown) then
-    --     y += 1
-    -- end
-    if pd.buttonIsPressed(pd.kButtonRight) then
+    
+    if self.input.rightDown == true then
         x += 1
     end
-    if pd.buttonIsPressed(pd.kButtonLeft) then
+    if self.input.leftDown == true then
         x -= 1
     end
 

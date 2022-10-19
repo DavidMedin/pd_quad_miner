@@ -2,6 +2,8 @@ import "CoreLibs/sprites"
 import "CoreLibs/graphics"
 import "CoreLibs/object"
 import "CoreLibs/timer"
+import "CoreLibs/ui"
+import "CoreLibs/nineslice"
 pd = playdate
 gfx = pd.graphics
 geom = pd.geometry
@@ -22,36 +24,43 @@ collide_group = {
    stone=2,
    air=3,
 }
+
+__debug = true
+screen_size = vec2.new(400,240)
 --[[
-   TODO: Get sprite rendering for world.
+   TODO: Draw context abstraction
+   TODO: fix quadtree bubbling
    TODO: Sounds
    TODO: Better collisions
-   TODO: Draw context abstraction
+   TODO: text resizing
    TODO: easily go between sprite and quad-tree line rendering
    TODO: Scenes
    TODO: quadtree chunk loading-unloading
    TODO: Disable gravity from menu
 ]]
 import "ecs"
-import "transform"
+import "components/transform"
 import "polygon"
-import "meatbag"
-import "enemies"
-import "sprite"
-import "player"
-import "camera"
+import "components/meatbag"
+import "components/enemies"
+import "components/sprite"
+import "components/player"
+import "components/camera"
 import "quadtree"
 import "map_node"
+import "sounds"
+import "input"
+import "ui"
 
 -- ================== Load Resources
 waku25 = gfx.font.new("waku25.pft")
+waku15 = gfx.font.new("waku15.pft")
 waku10 = gfx.font.new("waku10.pft")
 sword_img = gfx.image.new("sword.pdi")
 hero_img = gfx.image.new("hero.pdi")
 thug_img = gfx.image.new("thug.pdi")
 
-__debug = true
-screen_size = vec2.new(400,240)
+
 -- =================== Initialize Global Data
 
 msg = {}
@@ -92,55 +101,6 @@ gfx.setImageDrawMode(gfx.kDrawModeCopy)
 gfx.setFont(waku25)
 gfx.sprite.setBackgroundDrawingCallback(DrawBackground)
 
-
--- ======================================== Input functions
-
-function action_change(kind)
-   local butt = {pd.buttonIsPressed(pd.kButtonUp),
-         pd.buttonIsPressed(pd.kButtonDown),
-         pd.buttonIsPressed(pd.kButtonRight),
-         pd.buttonIsPressed(pd.kButtonLeft)
-      }
-      local true_count = 0
-      for k,v in ipairs(butt) do if v == true then true_count += 1 end end
-      if true_count ~= 1 then
-         return
-      end
-
-      local hero_grid = vec2.new(math.ceil(hero.transform.pos.x / 20), math.ceil(hero.transform.pos.y/ 20))
-      local block_pos = hero_grid
-      if butt[1] == true then
-         block_pos.y -= 1
-      elseif butt[2] == true then
-         block_pos.y += 1
-      elseif butt[3] == true then
-         block_pos.x += 1
-      elseif butt[4] == true then
-         block_pos.x -= 1
-      end
-
-      map:change(block_pos,kind)
-end
-
-local hero_control_handles = {
-   upButtonDown = function()
-      if b_timer ~= nil or hero.transform.colliding == false then return end
-      b_timer = pd.timer.new(125, function() b_timer = nil end)
-      b_timer.updateCallback = function(timer)
-         hero.transform.accel -= vec2.new(0,6)
-      end
-   end,
-
-   AButtonDown = function()
-      action_change(block_kind.air)
-   end,
-   BButtonDown = function()
-      action_change(block_kind.stone)
-   end
-
-}
-
-pd.inputHandlers.push(hero_control_handles)
 
 
 -- ============================== Update function
@@ -184,6 +144,9 @@ function playdate.update()
          end
       end
    end
+
+   --===================UI DRAWING===========--
+   draw_ui()
 
    -- =========== Display DoMsg ===========
    do

@@ -173,12 +173,10 @@ end
 function quadtree:change(pos,kind)
     local node,parent = self:create_get_node(pos)
     node.kind = kind
-    -- node.sprite:setGroups({collide_group.air})
     node:changed_kind()
     if parent.children[1].kind == kind and parent.children[2].kind == kind and parent.children[3].kind == kind and parent.children[4].kind == kind then
         parent.kind = kind
         for k,v in pairs(parent.children) do
-            -- print("removing sprite :",v)
             v.sprite:remove()
         end
         parent.children = nil
