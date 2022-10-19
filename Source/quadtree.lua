@@ -43,24 +43,26 @@ end
 function node:changed_kind(kind)
 end
 
-function node:recurse(pos,depth,max_depth,func)
+function node:recurse(pos,depth,max_depth,last,func,arb)
     local width = math.pow(2,max_depth) / math.pow(2,depth) * block_size
     --has children
     if self.kind == nil then
         for k,v in ipairs(self.children) do
             if k == 1 then
-                v:recurse(pos,depth+1, max_depth, func)
+                v:recurse(pos,depth+1, max_depth,last, func,arb)
             elseif k == 2 then
-                v:recurse(pos+vec2.new(width / 2,0),depth+1, max_depth, func)
+                v:recurse(pos+vec2.new(width / 2,0),depth+1, max_depth,last, func,arb)
             elseif k == 3 then
-                v:recurse(pos+vec2.new(0,width / 2),depth+1, max_depth, func)
+                v:recurse(pos+vec2.new(0,width / 2),depth+1, max_depth,last, func,arb)
             else
-                v:recurse(pos+vec2.new(width / 2,width / 2),depth+1, max_depth, func)
+                v:recurse(pos+vec2.new(width / 2,width / 2),depth+1, max_depth,last, func,arb)
             end
         end
+
+        if last then return end
     end
 
-    func(self,pos,width)
+    func(self,pos,width,arb)
 end
 
 function node:draw(pos,width)
@@ -78,7 +80,7 @@ end
 --=====================================================
 
 class("quadtree", {
-    max_depth = 8, -- 64 blocks
+    max_depth = 4, -- 64 blocks
 }).extends()
 
 function quadtree:init(kind,node_type)
@@ -86,7 +88,7 @@ function quadtree:init(kind,node_type)
 
     self.node_type = node_type
     self.root = node_type(kind)
-    self.root:recurse(vec2.new(0,0),0,self.max_depth, self.node_type.check_deep)
+    self.root:recurse(vec2.new(0,0),0,self.max_depth,false, self.node_type.check_deep)
 
 end
 
@@ -114,7 +116,7 @@ function quadtree:create_get_node(pos)
         if target_node.kind ~= nil and x ~= self.max_depth then
             -- Time to generate resolution
             target_node:split(self.node_type)
-            self.root:recurse(vec2.new(0,0),0,self.max_depth, self.node_type.check_deep)
+            self.root:recurse(vec2.new(0,0),0,self.max_depth,false, self.node_type.check_deep)
 
         end
 
@@ -183,11 +185,12 @@ function quadtree:change(pos,kind)
         parent.deep = true
 
         -- recalculate deepest
-        self.root:recurse(vec2.new(0,0),0,self.max_depth, self.node_type.check_deep)
+        self.root:recurse(vec2.new(0,0),0,self.max_depth,false, self.node_type.check_deep)
 
     end
 end
 
 function quadtree:draw()
-    self.root:recurse(vec2.new(0,0),0,self.max_depth,self.node_type.draw)
+    self.root:recurse(vec2.new(0,0),0,self.max_depth,true,self.node_type.draw,0)
+    self.root:recurse(vec2.new(0,0),0,self.max_depth,true,self.node_type.draw,1)
 end

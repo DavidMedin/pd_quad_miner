@@ -22,7 +22,16 @@ collide_group = {
    stone=2,
    air=3,
 }
-
+--[[
+   TODO: Get sprite rendering for world.
+   TODO: Sounds
+   TODO: Better collisions
+   TODO: Draw context abstraction
+   TODO: easily go between sprite and quad-tree line rendering
+   TODO: Scenes
+   TODO: quadtree chunk loading-unloading
+   TODO: Disable gravity from menu
+]]
 import "ecs"
 import "transform"
 import "polygon"
@@ -73,6 +82,8 @@ end
 -- ============================== Canvas context setup
 
 function DrawBackground()
+   hero.camera:activate()
+   map:draw()
 end
 
 gfx.setColor(gfx.kColorWhite)
@@ -164,8 +175,8 @@ function playdate.update()
    end
 
    --========== Drawing ===========
-   gfx.sprite.update()
    hero.camera:activate()
+   gfx.sprite.update()
    for k,entity in pairs(entities) do
       for i,component in pairs(entity) do
          if component.draw ~= nil and component.visible == true then
@@ -173,7 +184,6 @@ function playdate.update()
          end
       end
    end
-   map:draw()
 
    -- =========== Display DoMsg ===========
    do

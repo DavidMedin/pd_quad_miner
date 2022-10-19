@@ -18,7 +18,6 @@ function meatbag:init(entity)
    self.sprite:setGroups({collide_group.hero})
    self.sprite:setCollidesWithGroups(collide_group.stone)
    
-
    -- Create collidable for the meatbag
    self.polygon = CreateRect(16,16)
 end
