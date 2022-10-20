@@ -5,14 +5,19 @@ local air_img = gfx.image.new(20 + 2*air_margin,20 + 2*air_margin, gfx.kColorWhi
 
 class("map_node").extends(node)
 
-function map_node:init(kind)
-    map_node.super.init(self,kind)
+local next_id = 1
 
-end
+-- function map_node:init(kind,parent)
+--     map_node.super.init(self,kind)
+
+-- end
 
 -- Called when the node is now the deepest in the tree (has no children. This one should render now).
 function map_node:on_deepest(pos,width)
-
+    -- Debug ID
+    self.id = next_id
+    next_id += 1
+    
     self.sprite = gfx.sprite.new()
     self.sprite:moveTo(pos.x,pos.y)
 
@@ -27,8 +32,10 @@ function map_node:on_deepest(pos,width)
 end
 
 function map_node:not_deepest(pos,width)
-    self.sprite:remove()
-    self.sprite = nil
+    if self.sprite then -- This should fail ONLY during fast-paced construction and destruction (temp)
+        self.sprite:remove()
+        self.sprite = nil
+    end
 end
 
 
@@ -64,4 +71,15 @@ function map_node:draw(pos,width,arb)
         end
     end
 
+
+
+    if self.id and draw_id == true then
+        local old_font = gfx.getFont()
+        local col = gfx.getImageDrawMode()
+        gfx.setFont(waku10)
+        gfx.setImageDrawMode(gfx.kDrawModeNXOR)
+        gfx.drawText(self.id,pos.x+width/2-10,pos.y+width/2)
+        gfx.setImageDrawMode(col)
+        gfx.setFont(old_font)
+    end
 end

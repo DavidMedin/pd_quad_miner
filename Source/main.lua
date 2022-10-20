@@ -25,18 +25,18 @@ collide_group = {
    air=3,
 }
 
+draw_id = false
 __debug = true
 screen_size = vec2.new(400,240)
 --[[
-   TODO: Draw context abstraction
-   TODO: fix quadtree bubbling
+   TODO: Finish UI
+   TODO: Disable gravity from menu
    TODO: Sounds
    TODO: Better collisions
    TODO: text resizing
    TODO: easily go between sprite and quad-tree line rendering
    TODO: Scenes
    TODO: quadtree chunk loading-unloading
-   TODO: Disable gravity from menu
 ]]
 import "ecs"
 import "components/transform"
@@ -77,11 +77,18 @@ for x=1,math.pow(2,map.max_depth) do
       map:change(vec2.new(x, math.pow(2,map.max_depth)/2+y),block_kind.stone)
    end
 end
+
+-- Test block
+-- for x=1, 4 do
+--    for y=1, 4 do
+--       map:change(vec2.new(x,y+ math.pow(2,4)/2),block_kind.stone)
+--    end
+-- end
 -- =================== Initialize Entities
 do
    hero = entity()
    hero:addComponent(transform):addComponent(meatbag):addComponent(player):addComponent(camera)
-   hero.transform:Move( vec2.new(math.pow(2,map.max_depth)/2 * block_size - 100 + 8,math.pow(2,map.max_depth)/2 * block_size - 100) )
+   hero.transform:Move( vec2.new(math.pow(2,map.max_depth)/2 * block_size - 100 + 8 - 50,math.pow(2,map.max_depth)/2 * block_size - 100) )
    hero.transform.gravity = vec2.new(0,1)
 
    -- Want to know how to make an entity? Look at https://github.com/davidmedin/pd_swords
@@ -120,7 +127,6 @@ function playdate.update()
    end
    
    -- Apply Velocities
-   -- hero.transform.vel.y += 1
    for k,entity in ipairs(entities) do
       if entity.transform ~= nil then
 

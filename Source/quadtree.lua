@@ -8,16 +8,17 @@
 block_size = 20
 
 class("node",{}).extends()
-function node:init(kind)
+function node:init(kind,parent)
     node.super.init(self)
 
     if __debug == true then assert(kind) end
     self.kind = kind
     self.deep = true
+    self.parent = parent
 end
 function node:split(node_type)
     if self.children ~= nil then return end
-    self.children = {node_type(self.kind),node_type(self.kind),node_type(self.kind),node_type(self.kind)}
+    self.children = {node_type(self.kind,self),node_type(self.kind,self),node_type(self.kind,self),node_type(self.kind,self)}
     self.kind = nil
     self.deep = false
 end
@@ -74,6 +75,32 @@ function node:draw(pos,width)
     end
 end
 
+-- NOTE!: make sure to run a check_deep recurse after this!
+function node:collapse_from_here()
+    if self.parent ~= nil then -- otherwise, am root
+        print("has parent")
+
+        if self.parent.children[1].kind == self.kind and self.parent.children[2].kind == self.kind and self.parent.children[3].kind == self.kind and self.parent.children[4].kind == self.kind then
+            print("collapsing")
+            self.parent.kind = self.parent.children[1].kind
+            for k,v in pairs(self.parent.children) do
+                if v.sprite then
+                    v.sprite:remove()
+                end
+            end
+            self.parent.children = nil
+            -- self.parent:collapse_from_here()
+            return true
+
+        -- else
+        --     -- this one is weird. If we follow the recursion chain up, when we are done
+        --     -- recursing, then the above condition is not met. As a side effect, this
+        --     -- will always run.
+        end
+    end
+    return false
+end
+
 --=====================================================
 --=====================================================
 --=====================================================
@@ -87,7 +114,7 @@ function quadtree:init(kind,node_type)
     quadtree.super.init(self)
 
     self.node_type = node_type
-    self.root = node_type(kind)
+    self.root = node_type(kind,nil)
     self.root:recurse(vec2.new(0,0),0,self.max_depth,false, self.node_type.check_deep)
 
 end
@@ -170,25 +197,56 @@ function quadtree:get_node(pos)
     return target_node,target_node, target_parent
 end
 
+
 function quadtree:change(pos,kind)
     local node,parent = self:create_get_node(pos)
     node.kind = kind
     node:changed_kind()
-    if parent.children[1].kind == kind and parent.children[2].kind == kind and parent.children[3].kind == kind and parent.children[4].kind == kind then
-        parent.kind = kind
-        for k,v in pairs(parent.children) do
-            v.sprite:remove()
-        end
-        parent.children = nil
-        parent.deep = true
 
-        -- recalculate deepest
-        self.root:recurse(vec2.new(0,0),0,self.max_depth,false, self.node_type.check_deep)
-
-    end
+    self:collapse_from_node(node)
 end
 
 function quadtree:draw()
     self.root:recurse(vec2.new(0,0),0,self.max_depth,true,self.node_type.draw,0)
     self.root:recurse(vec2.new(0,0),0,self.max_depth,true,self.node_type.draw,1)
+end
+
+-- 'Bubbles' up a collapse
+function quadtree:collapse_from_node(node)
+    -- Climb the tree until it is okay to cut
+    local node = node
+    local parent = node.parent
+
+    if node.children ~= nil then
+        if __debug then assert(node.kind == nil) end
+        return
+    end
+
+    if node.parent == nil then
+        -- is root. Don't do this on root.
+        print("attempted to collapse from root")
+        return
+    end
+    
+    while parent do
+
+        if parent.children[1].kind == node.kind and parent.children[2].kind == node.kind and parent.children[3].kind == node.kind and parent.children[4].kind == node.kind then
+            parent.kind = node.kind
+
+            -- DESTROY THE CHILDREN
+            for k,v in pairs(parent.children) do
+                v.deep = false
+                v:check_deep()
+            end
+            parent.children = nil
+            parent.deep = true
+            
+            -- recalculate deepest
+            node = parent
+            parent = node.parent
+        else
+            break
+        end
+    end
+    self.root:recurse(vec2.new(0,0),0,self.max_depth,false, self.node_type.check_deep)
 end
