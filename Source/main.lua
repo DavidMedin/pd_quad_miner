@@ -60,7 +60,16 @@ sword_img = gfx.image.new("sword.pdi")
 hero_img = gfx.image.new("hero.pdi")
 thug_img = gfx.image.new("thug.pdi")
 
+imgui_add_item("thing",imgui_item_kind.button,function() print("thingy") end)
+imgui_add_item("other",imgui_item_kind.integer,function(new_val) print("other : " .. new_val) end,4)
+imgui_add_item("float",imgui_item_kind.float,function(new_val) print("float : " .. new_val) end,2.4)
 
+do
+   local function funny_func(option)
+      print("how many liters? " .. option .. "!")
+   end
+   imgui_add_item("liquid", imgui_item_kind.drop_down,{{name="one",func=funny_func},{name="two",func=funny_func},{name="three",func=funny_func}})
+end
 -- =================== Initialize Global Data
 
 msg = {}
@@ -82,6 +91,13 @@ end
 -- for x=1, 4 do
 --    for y=1, 4 do
 --       map:change(vec2.new(x,y+ math.pow(2,4)/2),block_kind.stone)
+--    end
+-- end
+
+-- Fill Block
+-- for x=1, math.pow(2,4) do
+--    for y=1, math.pow(2,4) do
+--       map:change(vec2.new(x,y),block_kind.stone)
 --    end
 -- end
 -- =================== Initialize Entities

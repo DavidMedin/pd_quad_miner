@@ -75,31 +75,6 @@ function node:draw(pos,width)
     end
 end
 
--- NOTE!: make sure to run a check_deep recurse after this!
-function node:collapse_from_here()
-    if self.parent ~= nil then -- otherwise, am root
-        print("has parent")
-
-        if self.parent.children[1].kind == self.kind and self.parent.children[2].kind == self.kind and self.parent.children[3].kind == self.kind and self.parent.children[4].kind == self.kind then
-            print("collapsing")
-            self.parent.kind = self.parent.children[1].kind
-            for k,v in pairs(self.parent.children) do
-                if v.sprite then
-                    v.sprite:remove()
-                end
-            end
-            self.parent.children = nil
-            -- self.parent:collapse_from_here()
-            return true
-
-        -- else
-        --     -- this one is weird. If we follow the recursion chain up, when we are done
-        --     -- recursing, then the above condition is not met. As a side effect, this
-        --     -- will always run.
-        end
-    end
-    return false
-end
 
 --=====================================================
 --=====================================================
