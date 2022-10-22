@@ -2,6 +2,7 @@
 local imgui_width = screen_size.x * 0.30
 local control_layers = 0
 local font_size = 15
+local hide_ui = true
 
 -- Enums
 imgui_item_kind = {
@@ -235,24 +236,35 @@ function imgui_add_item(name,kind,...)
     imgui:add_item(name,kind,...)
 end
 function draw_ui()
-    imgui:draw()
+    if not hide_ui then
+        imgui:draw()
+    end
 end
 
+-- peels back input layers and deletes dropdown menus.
+local function drop_to_game()
+    for i=1,control_layers do
+        pd.inputHandlers.pop()
+    end
+    control_layers = 0
+    imgui.drop_down = nil -- rid of it!
+    collectgarbage("collect")
+end
 menu:addMenuItem("Inspector",function()
     -- NOTE: Overrides input.lua's input handler!
     -- NOTE: Can be overriden by drop-down menus!
+    hide_ui = false
     if in_menu == false then
         imgui:push_controls()
         control_layers += 1
     else
-        for i=1,control_layers do
-            pd.inputHandlers.pop()
-        end
-        control_layers = 0
-        imgui.drop_down = nil -- rid of it!
-        collectgarbage("collect")
+        drop_to_game()
     end
     in_menu= not in_menu
+end)
+menu:addMenuItem("Toggle UI", function()
+    hide_ui = not hide_ui
+    drop_to_game()
 end)
 
 -- TODO: Draw symbols

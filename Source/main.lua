@@ -8,6 +8,8 @@ pd = playdate
 gfx = pd.graphics
 geom = pd.geometry
 vec2 = pd.geometry.vector2D
+
+math.randomseed(playdate.getSecondsSinceEpoch())
 sin = function(a) return math.sin(math.rad(a)) end
 cos = function(a) return math.cos(math.rad(a)) end
 asin = function(a) return math.deg(math.asin(a)) end
@@ -16,7 +18,8 @@ atan = function(a,b) return math.deg(math.atan(a,b)) end
 
 block_kind = {
    air = 0,
-   stone = 1
+   stone = 1,
+   gold = 2,
 }
 
 collide_group = {
@@ -48,6 +51,7 @@ import "components/player"
 import "components/camera"
 import "quadtree"
 import "map_node"
+import "map_gen"
 import "sounds"
 import "input"
 import "ui"
@@ -81,11 +85,14 @@ crank_vel=0
 
 
 map = quadtree(block_kind.air,map_node)
+local map_size = math.pow(2,map.max_depth)
 for x=1,math.pow(2,map.max_depth) do
    for y=1, 10 do
       map:change(vec2.new(x, math.pow(2,map.max_depth)/2+y),block_kind.stone)
    end
 end
+
+add_sphere(map,vec2.new(map_size/2,map_size/2), 3)
 
 -- Test block
 -- for x=1, 4 do

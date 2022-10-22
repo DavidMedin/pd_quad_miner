@@ -1,5 +1,6 @@
 -- Map resources
-local node_img = gfx.image.new("./stone.pdi")
+local stone_img = gfx.image.new("./stone.pdi")
+local gold_img = gfx.image.new("./gold.pdi")
 local air_margin = 5
 local air_img = gfx.image.new(20 + 2*air_margin,20 + 2*air_margin, gfx.kColorWhite)
 
@@ -8,8 +9,14 @@ class("map_node").extends(node)
 local next_id = 1
 
 -- function map_node:init(kind,parent)
---     map_node.super.init(self,kind)
-
+--     local kind = kind
+--     if kind == block_kind.stone then
+--         local rand = math.floor(math.random(0,2))
+--         if rand == 0 then
+--             kind = block_kind.gold
+--         end
+--     end
+--     map_node.super.init(self,kind,parent)
 -- end
 
 -- Called when the node is now the deepest in the tree (has no children. This one should render now).
@@ -23,7 +30,7 @@ function map_node:on_deepest(pos,width)
 
     self.sprite:setCollideRect(0,0,width,width)
 
-    if self.kind == block_kind.stone then
+    if self.kind ~= block_kind.air then
         self.sprite:setGroups(collide_group.stone)
     else
         self.sprite:setGroups(collide_group.air)
@@ -41,7 +48,7 @@ end
 
 function map_node:changed_kind()
     self.sprite:resetGroupMask()
-    if self.kind == block_kind.stone then
+    if self.kind ~= block_kind.air then
         self.sprite:setGroups(collide_group.stone)
     else
         self.sprite:setGroups(collide_group.air)
@@ -53,17 +60,26 @@ function map_node:draw(pos,width,arb)
     -- doesn't have children. Draw itself
     if self.kind == nil then return end
     -- IF arb is 1, then stuff, otherwise, air.
-    if self.kind == block_kind.stone and arb == 1 then
+    if self.kind ~= block_kind.air and arb == 1 then
+        local block_img = nil
+        if self.kind == block_kind.stone then
+            block_img = stone_img
+        elseif self.kind == block_kind.gold then
+            block_img = gold_img
+        else
+            print("uh oh : ", self.kind)
+        end
+
         local save_mode = gfx.getImageDrawMode()
         gfx.setImageDrawMode(gfx.kDrawModeWhiteTransparent)
         for x=1, width/block_size do
             for y=1,width/block_size do
-                node_img:draw(pos.x+block_size*(x-1),pos.y+block_size*(y-1))
+                block_img:draw(pos.x+block_size*(x-1),pos.y+block_size*(y-1))
             end
         end
         gfx.setImageDrawMode(save_mode)
 
-    elseif self.kind == block_kind.air  and arb == 0 then
+    elseif self.kind == block_kind.air and arb == 0 then
         for x=1, width/block_size do
             for y=1,width/block_size do
                 air_img:draw(pos.x+block_size*(x-1) - air_margin,pos.y+block_size*(y-1) - air_margin)
