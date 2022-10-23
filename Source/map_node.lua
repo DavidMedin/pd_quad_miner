@@ -1,23 +1,12 @@
 -- Map resources
-local stone_img = gfx.image.new("./stone.pdi")
-local gold_img = gfx.image.new("./gold.pdi")
+stone_img = gfx.image.new("images/stone.pdi")
+gold_img = gfx.image.new("images/gold.pdi")
 local air_margin = 5
 local air_img = gfx.image.new(20 + 2*air_margin,20 + 2*air_margin, gfx.kColorWhite)
 
 class("map_node").extends(node)
 
 local next_id = 1
-
--- function map_node:init(kind,parent)
---     local kind = kind
---     if kind == block_kind.stone then
---         local rand = math.floor(math.random(0,2))
---         if rand == 0 then
---             kind = block_kind.gold
---         end
---     end
---     map_node.super.init(self,kind,parent)
--- end
 
 -- Called when the node is now the deepest in the tree (has no children. This one should render now).
 function map_node:on_deepest(pos,width)
@@ -60,7 +49,7 @@ function map_node:draw(pos,width,arb)
     -- doesn't have children. Draw itself
     if self.kind == nil then return end
     -- IF arb is 1, then stuff, otherwise, air.
-    if self.kind ~= block_kind.air and arb == 1 then
+    if self.kind ~= block_kind.air and arb == 1 then -- If not air and is time to draw matter
         local block_img = nil
         if self.kind == block_kind.stone then
             block_img = stone_img
@@ -79,7 +68,7 @@ function map_node:draw(pos,width,arb)
         end
         gfx.setImageDrawMode(save_mode)
 
-    elseif self.kind == block_kind.air and arb == 0 then
+    elseif self.kind == block_kind.air and arb == 0 then -- Is air and time to draw air
         for x=1, width/block_size do
             for y=1,width/block_size do
                 air_img:draw(pos.x+block_size*(x-1) - air_margin,pos.y+block_size*(y-1) - air_margin)

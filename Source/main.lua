@@ -41,6 +41,8 @@ screen_size = vec2.new(400,240)
    TODO: Scenes
    TODO: quadtree chunk loading-unloading
 ]]
+import "util"
+import "ui"
 import "ecs"
 import "components/transform"
 import "polygon"
@@ -49,24 +51,24 @@ import "components/enemies"
 import "components/sprite"
 import "components/player"
 import "components/camera"
+import "components/inventory"
 import "quadtree"
 import "map_node"
 import "map_gen"
 import "sounds"
 import "input"
-import "ui"
 
 -- ================== Load Resources
-waku25 = gfx.font.new("waku25.pft")
-waku15 = gfx.font.new("waku15.pft")
-waku10 = gfx.font.new("waku10.pft")
-sword_img = gfx.image.new("sword.pdi")
-hero_img = gfx.image.new("hero.pdi")
-thug_img = gfx.image.new("thug.pdi")
+waku25 = gfx.font.new("fonts/waku25.pft")
+waku15 = gfx.font.new("fonts/waku15.pft")
+waku10 = gfx.font.new("fonts/waku10.pft")
+sword_img = gfx.image.new("images/sword.pdi")
+hero_img = gfx.image.new("images/hero.pdi")
+thug_img = gfx.image.new("images/thug.pdi")
 
-imgui_add_item("thing",imgui_item_kind.button,function() print("thingy") end)
-imgui_add_item("other",imgui_item_kind.integer,function(new_val) print("other : " .. new_val) end,4)
-imgui_add_item("float",imgui_item_kind.float,function(new_val) print("float : " .. new_val) end,2.4)
+-- imgui_add_item("thing",imgui_item_kind.button,function() print("thingy") end)
+-- imgui_add_item("other",imgui_item_kind.integer,function(new_val) print("other : " .. new_val) end,4)
+-- imgui_add_item("float",imgui_item_kind.float,function(new_val) print("float : " .. new_val) end,2.4)
 
 do
    local function funny_func(option)
@@ -74,6 +76,9 @@ do
    end
    imgui_add_item("liquid", imgui_item_kind.drop_down,{{name="one",func=funny_func},{name="two",func=funny_func},{name="three",func=funny_func}})
 end
+
+local TMP_line_width = 1
+imgui_add_item("width", imgui_item_kind.integer, function(value) TMP_line_width = value end,TMP_line_width)
 -- =================== Initialize Global Data
 
 msg = {}
@@ -84,6 +89,23 @@ end
 crank_vel=0
 
 
+-- DELETE THIS
+-- do
+--    local prop = property {
+--       get = function(prop)
+--          return prop.val
+--       end,
+
+--       set = function(prop, value)
+--          prop.val = value + 1
+--       end
+--    }
+--    -- <<= to set property, # to read.
+--    prop <<= 3
+--    print("property : " .. #prop)
+-- end
+--======
+
 map = quadtree(block_kind.air,map_node)
 local map_size = math.pow(2,map.max_depth)
 for x=1,math.pow(2,map.max_depth) do
@@ -93,24 +115,10 @@ for x=1,math.pow(2,map.max_depth) do
 end
 
 add_sphere(map,vec2.new(map_size/2,map_size/2), 3)
-
--- Test block
--- for x=1, 4 do
---    for y=1, 4 do
---       map:change(vec2.new(x,y+ math.pow(2,4)/2),block_kind.stone)
---    end
--- end
-
--- Fill Block
--- for x=1, math.pow(2,4) do
---    for y=1, math.pow(2,4) do
---       map:change(vec2.new(x,y),block_kind.stone)
---    end
--- end
 -- =================== Initialize Entities
 do
    hero = entity()
-   hero:addComponent(transform):addComponent(meatbag):addComponent(player):addComponent(camera)
+   hero:addComponent(transform):addComponent(meatbag):addComponent(player):addComponent(camera):addComponent(inv)
    hero.transform:Move( vec2.new(math.pow(2,map.max_depth)/2 * block_size - 100 + 8 - 50,math.pow(2,map.max_depth)/2 * block_size - 100) )
    hero.transform.gravity = vec2.new(0,1)
 
@@ -176,6 +184,16 @@ function playdate.update()
 
    --===================UI DRAWING===========--
    draw_ui()
+
+   -- Border test
+   -- gfx.pushContext()
+   -- gfx.setDrawOffset(0,0)
+   -- gfx.setLineWidth(TMP_line_width)
+   -- gfx.setColor(gfx.kColorWhite)
+   -- gfx.fillRect(200,50,40,40)
+   -- gfx.setColor(gfx.kColorBlack)
+   -- gfx.drawRect(200,50,40,40)
+   -- gfx.popContext()
 
    -- =========== Display DoMsg ===========
    do
