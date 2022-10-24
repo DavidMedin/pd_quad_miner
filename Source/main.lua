@@ -16,6 +16,7 @@ asin = function(a) return math.deg(math.asin(a)) end
 acos = function(a) return math.deg(math.acos(a)) end
 atan = function(a,b) return math.deg(math.atan(a,b)) end
 
+import "resource"
 block_kind = {
    air = 0,
    stone = 1,
@@ -30,10 +31,13 @@ collide_group = {
 
 draw_id = false
 __debug = true
+gravity = true
 screen_size = vec2.new(400,240)
+
+sword_img =  gfx.image.new("images/sword.pdi")
+hero_img = gfx.image.new("images/hero.pdi")
+-- thug_img = gfx.image.new("images/thug.pdi"))
 --[[
-   TODO: Finish UI
-   TODO: Disable gravity from menu
    TODO: Sounds
    TODO: Better collisions
    TODO: text resizing
@@ -44,6 +48,7 @@ screen_size = vec2.new(400,240)
 import "util"
 import "ui"
 import "ecs"
+import "components/items"
 import "components/transform"
 import "polygon"
 import "components/meatbag"
@@ -62,50 +67,38 @@ import "input"
 waku25 = gfx.font.new("fonts/waku25.pft")
 waku15 = gfx.font.new("fonts/waku15.pft")
 waku10 = gfx.font.new("fonts/waku10.pft")
-sword_img = gfx.image.new("images/sword.pdi")
-hero_img = gfx.image.new("images/hero.pdi")
-thug_img = gfx.image.new("images/thug.pdi")
+
+imgui_add_item("gravity", imgui_item_kind.button,function()
+   gravity = not gravity
+   if gravity then
+      hero.transform.gravity = vec2.new(0,1)
+   else
+      hero.transform.gravity = vec2.new(0,0)
+   end
+   -- Also somewhere is
+end)
 
 -- imgui_add_item("thing",imgui_item_kind.button,function() print("thingy") end)
 -- imgui_add_item("other",imgui_item_kind.integer,function(new_val) print("other : " .. new_val) end,4)
 -- imgui_add_item("float",imgui_item_kind.float,function(new_val) print("float : " .. new_val) end,2.4)
 
-do
-   local function funny_func(option)
-      print("how many liters? " .. option .. "!")
-   end
-   imgui_add_item("liquid", imgui_item_kind.drop_down,{{name="one",func=funny_func},{name="two",func=funny_func},{name="three",func=funny_func}})
-end
+-- Example of dropdown
+-- do
+--    local function funny_func(option)
+--       print("how many liters? " .. option .. "!")
+--    end
+--    imgui_add_item("liquid", imgui_item_kind.drop_down,{{name="one",func=funny_func},{name="two",func=funny_func},{name="three",func=funny_func}})
+-- end
 
-local TMP_line_width = 1
-imgui_add_item("width", imgui_item_kind.integer, function(value) TMP_line_width = value end,TMP_line_width)
 -- =================== Initialize Global Data
 
 msg = {}
 function domsg(format,...)
    table.insert(msg,string.format(format,...) )
 end
-
 crank_vel=0
 
-
--- DELETE THIS
--- do
---    local prop = property {
---       get = function(prop)
---          return prop.val
---       end,
-
---       set = function(prop, value)
---          prop.val = value + 1
---       end
---    }
---    -- <<= to set property, # to read.
---    prop <<= 3
---    print("property : " .. #prop)
--- end
---======
-
+--================ Generate Map=============
 map = quadtree(block_kind.air,map_node)
 local map_size = math.pow(2,map.max_depth)
 for x=1,math.pow(2,map.max_depth) do
@@ -115,6 +108,7 @@ for x=1,math.pow(2,map.max_depth) do
 end
 
 add_sphere(map,vec2.new(map_size/2,map_size/2), 3)
+
 -- =================== Initialize Entities
 do
    hero = entity()
@@ -124,7 +118,6 @@ do
 
    -- Want to know how to make an entity? Look at https://github.com/davidmedin/pd_swords
 end
--- ======== Simple Do Msg function and setup =========
 
 -- ============================== Canvas context setup
 
@@ -184,17 +177,6 @@ function playdate.update()
 
    --===================UI DRAWING===========--
    draw_ui()
-
-   -- Border test
-   -- gfx.pushContext()
-   -- gfx.setDrawOffset(0,0)
-   -- gfx.setLineWidth(TMP_line_width)
-   -- gfx.setColor(gfx.kColorWhite)
-   -- gfx.fillRect(200,50,40,40)
-   -- gfx.setColor(gfx.kColorBlack)
-   -- gfx.drawRect(200,50,40,40)
-   -- gfx.popContext()
-
    -- =========== Display DoMsg ===========
    do
       gfx.pushContext()

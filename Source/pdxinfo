@@ -1,7 +1,7 @@
-name=minors
-author=
-description=
+name=CosmicBottomlessStone
+author=David Medin
+description=A game for dwarves, by dwarves.
 bundleID=com.davidmedin
 imagePath=
 version=1.0
-buildNumber=123
+buildNumber=001

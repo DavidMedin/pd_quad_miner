@@ -1,6 +1,12 @@
 -- Map resources
 stone_img = gfx.image.new("images/stone.pdi")
 gold_img = gfx.image.new("images/gold.pdi")
+
+local kind_images = {
+    [block_kind.stone]=stone_img,
+    [block_kind.gold]=gold_img,
+}
+
 local air_margin = 5
 local air_img = gfx.image.new(20 + 2*air_margin,20 + 2*air_margin, gfx.kColorWhite)
 
@@ -50,14 +56,15 @@ function map_node:draw(pos,width,arb)
     if self.kind == nil then return end
     -- IF arb is 1, then stuff, otherwise, air.
     if self.kind ~= block_kind.air and arb == 1 then -- If not air and is time to draw matter
-        local block_img = nil
-        if self.kind == block_kind.stone then
-            block_img = stone_img
-        elseif self.kind == block_kind.gold then
-            block_img = gold_img
-        else
-            print("uh oh : ", self.kind)
-        end
+        local block_img = kind_images[self.kind]
+        -- if self.kind == block_kind.stone then
+        --     block_img = stone_img
+        -- elseif self.kind == block_kind.gold then
+        --     block_img = gold_img
+        -- else
+            -- print("uh oh : ", self.kind)
+        -- end
+        if __debug then assert(block_img, "Missing image for block kind!") end
 
         local save_mode = gfx.getImageDrawMode()
         gfx.setImageDrawMode(gfx.kDrawModeWhiteTransparent)

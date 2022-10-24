@@ -250,10 +250,14 @@ local function drop_to_game()
     imgui.drop_down = nil -- rid of it!
     collectgarbage("collect")
 end
+
+local show_ui_item
 menu:addMenuItem("Inspector",function()
     -- NOTE: Overrides input.lua's input handler!
     -- NOTE: Can be overriden by drop-down menus!
     hide_ui = false
+    show_ui_item:setValue(true)
+
     if in_menu == false then
         imgui:push_controls()
         control_layers += 1
@@ -262,8 +266,8 @@ menu:addMenuItem("Inspector",function()
     end
     in_menu= not in_menu
 end)
-menu:addMenuItem("Toggle UI", function()
-    hide_ui = not hide_ui
+show_ui_item = menu:addCheckmarkMenuItem("Show UI",false, function(value)
+    hide_ui = not value
     drop_to_game()
 end)
 

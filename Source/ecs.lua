@@ -13,7 +13,10 @@ end
 
 function entity:addComponent(comp,...)
    self[comp.className] =  comp(self,...)
-
+   return self
+end
+function entity:add(comp,...)
+   self[comp.className] =  comp(self,...)
    return self
 end
 function entity:hasComponent(component)

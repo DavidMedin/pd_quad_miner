@@ -14,14 +14,13 @@ imgui_add_item("inv-ind",imgui_item_kind.integer,function(new_val)
 
 
 -- Resources
-local pick_img = gfx.image.new("images/pick.pdi")
-
 class("inv").extends(component)
-function inv:init(entity)
-    inv.super.init(self,entity)
+function inv:init(ent)
+    inv.super.init(self,ent)
     self.show_inv = false
 
-    self.items = {{img=pick_img,kind=block_kind.air},{img=stone_img,kind=block_kind.stone},{img=gold_img,kind=block_kind.gold}}
+    -- for each new inventory, create a pickaxe, stone_item, and gold_item
+    self.items = { entity():add(item,pick_item),entity():add(item,stone_item), entity():add(item,gold_item) }
     self.selected_item = 1
     self.gui = pd.ui.gridview.new()
     self.gui:setNumberOfSections(1)
@@ -78,15 +77,17 @@ function inv:init(entity)
             gfx.drawRoundRect(x+border_offset,y+border_offset,width-border_offset*2,height-border_offset*2,4)
 
             local item = self.items[column]
-            local img_w,img_h = item.img:getSize()
+            local img_w,img_h = item.item.icon:getSize()
             if selected then gfx.setImageDrawMode(gfx.kDrawModeInverted) else gfx.setImageDrawMode(gfx.kDrawModeCopy) end
             
-            item.img:draw(x + width/2 - img_w/2,y+ height/2 - img_h/2)
+            item.item.icon:draw(x + width/2 - img_w/2,y+ height/2 - img_h/2)
         gfx.popContext()
     end--drawCell
 end-- init
 
-
+function inv:get_selected_item()
+    return self.items[self.selected_item]
+end
 function inv:update_cell_size()
     local border_add = #self.border_size * 2
     -- local border_add = math.floor(#self.border_size/2) * 2
@@ -174,7 +175,8 @@ function inv:draw_indicator()
     gfx.setColor(gfx.kColorBlack)
     gfx.drawRoundRect(ind_pos.x,ind_pos.y,#ind_width,#ind_width,4)
 
-    self.items[self.selected_item].img:draw(ind_pos.x,ind_pos.y)
+    local item = self.items[self.selected_item]
+    item.item.icon:draw(ind_pos.x,ind_pos.y)
 end
 
 

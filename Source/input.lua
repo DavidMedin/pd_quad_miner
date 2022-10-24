@@ -14,6 +14,33 @@ function new_input_listener()
     return new_tab
 end
 
+
+-- Gets the dpad as a vector. (Only one button can be pressed)
+function button_dir()
+    local butt = {pd.buttonIsPressed(pd.kButtonUp),
+          pd.buttonIsPressed(pd.kButtonDown),
+          pd.buttonIsPressed(pd.kButtonRight),
+          pd.buttonIsPressed(pd.kButtonLeft)
+    }
+    local true_count = 0
+    for k,v in ipairs(butt) do if v == true then true_count += 1 end end
+    if true_count ~= 1 then
+        return vec2.new(0,0)
+    end
+
+    local block_pos = vec2.new(0,0)
+    if butt[1] == true then
+        block_pos.y -= 1
+    elseif butt[2] == true then
+        block_pos.y += 1
+    elseif butt[3] == true then
+        block_pos.x += 1
+    elseif butt[4] == true then
+        block_pos.x -= 1
+    end
+
+    return block_pos
+ end
  
  local hero_control_handles = {
     
