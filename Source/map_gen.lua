@@ -1,5 +1,5 @@
-function add_sphere(map, pos, radius)
-    local side = math.pow(2,map.max_depth)
+function ADD_SPHERE(map, pos, radius)
+    local side = 2^map.max_depth
     assert(side >= pos.x + radius and pos.x-radius >= 0 and
           side >= pos.y + radius and pos.y-radius >= 0, "bad arguments to add_sphere")
 
@@ -9,7 +9,7 @@ function add_sphere(map, pos, radius)
             local p2 = geom.point.new(x,y)
             local dist = p1:distanceToPoint(p2)
             if dist < radius then
-                map:change(p2,block_kind.gold)
+                map:change(p2,BLOCK_KIND.gold)
             end
         end
     end

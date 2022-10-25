@@ -1,34 +1,34 @@
-function wrap(a,b)
+function WRAP(a,b)
     local q = a % b
     if q < 0 then
-        return wrap(a+b,b)
+        return WRAP(a+b,b)
     end
     return q
 end
 
-function angles_diff(a1,a2)
+function ANGLES_DIFF(a1,a2)
     local diff = (360+(a1-a2))%360
     local diff1 = (360+(a2-a1))%360
     if diff1 < diff then diff = diff1 end
     return diff
 end
-function sign_angles_diff(a1,a2)
+function SIGN_ANGLES_DIFF(a1,a2)
     local diff = (360+(a1-a2))%360
     local diff1 = (360+(a2-a1))%360
     if diff1 < diff then diff = -diff1 end
     return diff
 end
-function between_angles(as,p,ae)
-    p = wrap(p-as,360)
-    ae = wrap(ae-as,360)
+function BETWEEN_ANGLES(as,p,ae)
+    p = WRAP(p-as,360)
+    ae = WRAP(ae-as,360)
     as = 0
     if p < ae then return true else return false end
 end
-function angles_left(a,p)
-    return between_angles(wrap(a-180,360),p,a)
+function ANGLES_LEFT(a,p)
+    return BETWEEN_ANGLES(WRAP(a-180,360),p,a)
 end
-function angles_right(a,p)
-    return between_angles(a,p,wrap(a+180,360))
+function ANGLES_RIGHT(a,p)
+    return BETWEEN_ANGLES(a,p,WRAP(a+180,360))
 end
 function math.sign(x)
     if x<0 then

@@ -1,4 +1,7 @@
+---@diagnostic disable:lowercase-global
+
 -- Properties, in Lua
+-- Pro tip, don't do that.
 
 --[[
     Example:
@@ -17,14 +20,15 @@
    print("property : " .. #prop)
 end
 ]]
-function property(funcs)
+---@deprecated
+function PROPERTY(funcs)
     local tab = {val=nil}
     setmetatable(tab, {__len=function() if funcs.get then return funcs.get(tab) else return tab.val end end,__shl=function(tab,value) if funcs.set then funcs.set(tab,value);return tab else tab.val = value;return tab end end})
     return tab
 end
 
 
-function enum(en)
+function ENUM(en)
    local new_tab = {}
    local i = 1
    for k,v in ipairs(en) do
@@ -39,8 +43,8 @@ end
    Tests for enum
 ]]
 
-if __debug then
-   local enu = enum{
+if __DEBUG then
+   local enu = ENUM{
       "rose","jim","sword"
    }
    assert(enu.rose == 1, "failed enum test")
@@ -49,7 +53,7 @@ if __debug then
 end
 
 
-function enum_map(src_1,src_2)
+function ENUM_MAP(src_1,src_2)
    local map = {}
    for k,v in pairs(src_1) do
       for k2,v2 in pairs(src_2) do
@@ -61,15 +65,15 @@ function enum_map(src_1,src_2)
    return map
 end
 
-if __debug then
+if __DEBUG then
    -- tests for enum_map
-   local enum1 = enum {
+   local enum1 = ENUM {
       "yolo",
       "gun",
       "stone",
       "rose"
    }
-   local enum2 = enum {
+   local enum2 = ENUM {
       "gun",
       "water",
       "board",
@@ -77,7 +81,7 @@ if __debug then
       "rose"
    }
 
-   local map = enum_map(enum1,enum2)
+   local map = ENUM_MAP(enum1,enum2)
 
    assert(map[enum1.gun] == 1, "failed enum test")
    assert(map[enum1.gun] == enum2.gun, "failed enum test")
@@ -85,8 +89,19 @@ if __debug then
    
 end
 
+---@generic K,V
+---@param tabl {[K]:V}
+---@param value V
+---@return K
 function table.keyOfValue(tabl,value)
    for k,v in pairs(tabl) do
       if value == v then return k end
    end
+   return nil
 end
+
+sin = function(a) return math.sin(math.rad(a)) end
+cos = function(a) return math.cos(math.rad(a)) end
+asin = function(a) return math.deg(math.asin(a)) end
+acos = function(a) return math.deg(math.acos(a)) end
+atan = function(a,b) return math.deg(math.atan(a,b)) end

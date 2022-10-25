@@ -1,19 +1,17 @@
 -- Variables
-local ind_pos
-local ind_width = property {
-    set = function(tabl,value)
-        tabl.val = value
-        ind_pos = vec2.new(screen_size.x-value,screen_size.y-value)
-    end
-}
-ind_width <<= 20
-
-imgui_add_item("inv-ind",imgui_item_kind.integer,function(new_val)
-    ind_width <<= new_val
- end,#ind_width)
-
+local ind_width = 20
+local ind_pos = vec2.new(SCREEN_SIZE.x-ind_width,SCREEN_SIZE.y-ind_width)
 
 -- Resources
+---@class inv : component
+---@field show_inv boolean
+---@field items {item: entity, count: number}
+---@field selected_item integer
+---@field gui pd_gridview
+---@field cell_size integer[]
+---@field border_size integer
+---@field content_size integer[]
+inv=nil
 class("inv").extends(component)
 function inv:init(ent)
     inv.super.init(self,ent)
@@ -31,58 +29,35 @@ function inv:init(ent)
         self.gui:setNumberOfColumns(1)
     else
         self.gui:setNumberOfColumns(#self.items)
-end
+    end
     self.gui:setNumberOfRows(1)
 
-    self.border_size = property {
-        set = function(prop,value)
-            prop.val = value
-            self:update_cell_size()
-        end
-    }
-    self.content_size = property {
-        set = function(prop,value)
-            prop.val = value
-            self:update_cell_size()
-        end
-    }
-    self.content_inset = property {
-        set = function(prop,value)
-            prop.val = value
-            self.gui:setContentInset( table.unpack(prop.val) )
-        end
-    }
-    self.cell_padding = property {
-        set = function(prop,value)
-            prop.val = value
-            self.gui:setCellPadding( table.unpack(prop.val) )
-        end
-    }
     self.cell_size = {0,0} -- Must be updated!
-    self.border_size.val = 3 -- <-----both must be defined for cell size. (ignore prop) 
-    self.content_size <<= {20,20}--<-|
+    self.border_size = 3
+    self.content_size ={20,20}
+    self:update_cell_size()
 
-    self.content_inset <<= {1,1,2,2}
-    self.cell_padding <<= {1,1,0,0}
+    self:set_content_inset({1,1,2,2})
+    self:set_cell_padding({1,1,0,0})
     self.border_width = 3
 
-    self:add_item(entity():add(item,pick_item)) -- Create item.
+    self:add_item(entity():add(item,PICK_ITEM)) -- Create item.
 
-    imgui_add_item("inv-bord",imgui_item_kind.integer,function(new_val)
-        self.border_size <<= new_val
+    IMGUI_ADD_ITEM("inv-bord",IMGUI_ITEM_KIND.integer,function(new_val)
+        self:set_border_size(new_val)
      end,3)
-     imgui_add_item("inset",imgui_item_kind.integer,function(new_val)
-        self.content_inset <<= {new_val,new_val,new_val,new_val}
-     end,0)
+     IMGUI_ADD_ITEM("inset",IMGUI_ITEM_KIND.integer,function(new_val)
+        self:set_content_inset {new_val-1,new_val-1,new_val,new_val}
+     end,2)
 
 
     self.gui.drawCell = function(cell,section, row, column, selected, x, y, width, height)
         gfx.pushContext()
-            gfx.setLineWidth(#self.border_size)
+            gfx.setLineWidth(self.border_size)
             if selected then gfx.setColor(gfx.kColorBlack) else gfx.setColor(gfx.kColorWhite) end
-            gfx.fillRoundRect(x+#self.border_size,y+#self.border_size,(#self.content_size)[1],(#self.content_size)[1],4)
+            gfx.fillRoundRect(x+self.border_size,y+self.border_size,self.content_size[1],self.content_size[1],4)
             gfx.setColor(gfx.kColorBlack)
-            local border_offset = math.floor(#self.border_size/2)
+            local border_offset = math.floor(self.border_size/2)
             gfx.drawRoundRect(x+border_offset,y+border_offset,width-border_offset*2,height-border_offset*2,4)
 
             local item = self.items[column].item
@@ -95,33 +70,56 @@ end
     end--drawCell
 end-- init
 
+---@param value integer
+function inv:set_border_size(value)
+    self.border_size = value
+    self:update_cell_size()
+end
+---@param value integer[]
+function inv:set_content_size(value)
+    self.content_size = value
+    self:update_cell_size()
+end
+---@param value integer[]
+function inv:set_content_inset(value)
+    self.content_inset = value
+    self.gui:setContentInset( table.unpack(value) )
+end
+---@param value integer[]
+function inv:set_cell_padding(value)
+    self.cell_padding = value
+    self.gui:setCellPadding( table.unpack(value) )
+end
+
+---@return {item: entity, count: number}
 function inv:get_selected_item()
     return self.items[self.selected_item]
 end
 
 
 -- Please only give this function an item has one reference, thank you!
+---@param item entity
 function inv:add_item(item)
     for k,v in ipairs(self.items) do
         -- May want a stronger way of checking equality (for unique items)
-        if v.item.name == item.name then
+        if v.item:get"item".name == item:get"item".name then
             v.count += 1
             return
         end
     end
 
     -- Item is not already in, push it.
-    item.item.inv = self
+    item:get"item".inv = self
     table.insert(self.items,{item=item,count=1})
     self.gui:setNumberOfColumns(#self.items)
 end
 
 
 function inv:update_cell_size()
-    local border_add = #self.border_size * 2
+    local border_add = self.border_size * 2
     -- local border_add = math.floor(#self.border_size/2) * 2
-    self.cell_size[1] = (#self.content_size)[1] + border_add
-    self.cell_size[2] = (#self.content_size)[2] + border_add
+    self.cell_size[1] = self.content_size[1] + border_add
+    self.cell_size[2] = self.content_size[2] + border_add
     self.gui:setCellSize( table.unpack(self.cell_size) )
 end
 
@@ -130,10 +128,10 @@ function inv:get_size()
     local item_count = #self.items
     if item_count == 0 then item_count = 1 end
 
-    local menu_width = item_count * ( (#self.cell_padding)[1] + (#self.cell_padding)[2] +self.cell_size[1] )
-        + (#self.content_inset)[1] + (#self.content_inset)[2] -- Fun border math.
-    local menu_height = 1 * ( (#self.cell_padding)[3] + (#self.cell_padding)[4] + self.cell_size[2] )
-        + (#self.content_inset)[3] + (#self.content_inset)[4]
+    local menu_width = item_count * ( self.cell_padding[1] + self.cell_padding[2] +self.cell_size[1] )
+        + self.content_inset[1] + self.content_inset[2] -- Fun border math.
+    local menu_height = 1 * ( self.cell_padding[3] + self.cell_padding[4] + self.cell_size[2] )
+        + self.content_inset[3] + self.content_inset[4]
     
     return menu_width,menu_height
 end
@@ -142,8 +140,8 @@ end
 function inv:get_bounds()
     local menu_width,menu_height = self:get_size()
         
-    local x = screen_size.x/2 - menu_width/2
-    local y = screen_size.y/2 - menu_height/2
+    local x = SCREEN_SIZE.x/2 - menu_width/2
+    local y = SCREEN_SIZE.y/2 - menu_height/2
 
     return x,y,menu_width,menu_height
 end
@@ -200,9 +198,9 @@ end
 function inv:draw_indicator()
     gfx.setLineWidth(self.border_width)
     gfx.setColor(gfx.kColorWhite)
-    gfx.fillRoundRect(ind_pos.x,ind_pos.y,#ind_width,#ind_width,4)
+    gfx.fillRoundRect(ind_pos.x,ind_pos.y,ind_width,ind_width,4)
     gfx.setColor(gfx.kColorBlack)
-    gfx.drawRoundRect(ind_pos.x,ind_pos.y,#ind_width,#ind_width,4)
+    gfx.drawRoundRect(ind_pos.x,ind_pos.y,ind_width,ind_width,4)
 
     local item = self.items[self.selected_item].item
     item.item.icon:draw(ind_pos.x,ind_pos.y)

@@ -1,49 +1,29 @@
-import "CoreLibs/sprites"
-import "CoreLibs/graphics"
-import "CoreLibs/object"
-import "CoreLibs/timer"
-import "CoreLibs/ui"
-import "CoreLibs/nineslice"
-pd = playdate
-gfx = pd.graphics
-geom = pd.geometry
-vec2 = pd.geometry.vector2D
-
-math.randomseed(playdate.getSecondsSinceEpoch())
-sin = function(a) return math.sin(math.rad(a)) end
-cos = function(a) return math.cos(math.rad(a)) end
-asin = function(a) return math.deg(math.asin(a)) end
-acos = function(a) return math.deg(math.acos(a)) end
-atan = function(a,b) return math.deg(math.atan(a,b)) end
-
-import "resource"
+import "prelude"
 import "util"
+import "resource"
+math.randomseed(playdate.getSecondsSinceEpoch())
 
--- block_kind = {
---    air = 0,
---    stone = 1,
---    gold = 2,
--- }
-block_kind = enum {
-   "air",
-   "stone",
-   "gold"
-}
-
-collide_group = {
-   hero=1,
+---@enum block_kind
+BLOCK_KIND = {
+   air=1,
    stone=2,
-   air=3,
+   gold=3,
 }
 
-draw_id = false
-__debug = true
-gravity = true
-screen_size = vec2.new(400,240)
+---@enum collide_group
+COLLIDE_GROUP = {
+   hero = 1,
+   stone = 2,
+   air = 3,
+}
 
-sword_img =  gfx.image.new("images/sword.pdi")
-hero_img = gfx.image.new("images/hero.pdi")
--- thug_img = gfx.image.new("images/thug.pdi"))
+DRAW_ID = false
+__DEBUG = true
+GRAVITY = true
+SCREEN_SIZE = vec2.new(400, 240)
+
+-- sword_img = gfx.image.new("images/sword.pdi")
+
 --[[
    TODO: Sounds
    TODO: Better collisions
@@ -58,7 +38,6 @@ import "components/items"
 import "components/transform"
 import "polygon"
 import "components/meatbag"
-import "components/enemies"
 import "components/sprite"
 import "components/player"
 import "components/camera"
@@ -70,57 +49,38 @@ import "sounds"
 import "input"
 
 -- ================== Load Resources
-waku25 = gfx.font.new("fonts/waku25.pft")
-waku15 = gfx.font.new("fonts/waku15.pft")
-waku10 = gfx.font.new("fonts/waku10.pft")
+WAKU25 = gfx.font.new("fonts/waku25.pft")
+WAKU15 = gfx.font.new("fonts/waku15.pft")
+WAKU10 = gfx.font.new("fonts/waku10.pft")
 
-imgui_add_item("gravity", imgui_item_kind.button,function()
-   gravity = not gravity
-   if gravity then
-      hero.transform.gravity = vec2.new(0,1)
+IMGUI_ADD_ITEM("gravity", IMGUI_ITEM_KIND.button, function()
+   GRAVITY = not GRAVITY
+   if GRAVITY then
+      HERO.transform.gravity = vec2.new(0, 1)
    else
-      hero.transform.gravity = vec2.new(0,0)
+      HERO.transform.gravity = vec2.new(0, 0)
    end
    -- Also somewhere is
 end)
 
--- imgui_add_item("thing",imgui_item_kind.button,function() print("thingy") end)
--- imgui_add_item("other",imgui_item_kind.integer,function(new_val) print("other : " .. new_val) end,4)
--- imgui_add_item("float",imgui_item_kind.float,function(new_val) print("float : " .. new_val) end,2.4)
-
--- Example of dropdown
--- do
---    local function funny_func(option)
---       print("how many liters? " .. option .. "!")
---    end
---    imgui_add_item("liquid", imgui_item_kind.drop_down,{{name="one",func=funny_func},{name="two",func=funny_func},{name="three",func=funny_func}})
--- end
-
--- =================== Initialize Global Data
-
-msg = {}
-function domsg(format,...)
-   table.insert(msg,string.format(format,...) )
-end
-crank_vel=0
-
 --================ Generate Map=============
-map = quadtree(block_kind.air,map_node)
-local map_size = math.pow(2,map.max_depth)
-for x=1,math.pow(2,map.max_depth) do
-   for y=1, 10 do
-      map:change(vec2.new(x, math.pow(2,map.max_depth)/2+y),block_kind.stone)
+MAP = quadtree(BLOCK_KIND.air, map_node)
+local map_size = 2 ^ MAP.max_depth
+for x = 1, 2 ^ MAP.max_depth do
+   for y = 1, 10 do
+      MAP:change(vec2.new(x, 2 ^ MAP.max_depth / 2 + y), BLOCK_KIND.stone)
    end
 end
 
-add_sphere(map,vec2.new(map_size/2,map_size/2), 3)
+ADD_SPHERE(MAP, vec2.new(map_size / 2, map_size / 2), 3)
 
 -- =================== Initialize Entities
 do
-   hero = entity()
-   hero:addComponent(transform):addComponent(meatbag):addComponent(player):addComponent(camera):addComponent(inv)
-   hero.transform:Move( vec2.new(math.pow(2,map.max_depth)/2 * block_size - 100 + 8 - 50,math.pow(2,map.max_depth)/2 * block_size - 100) )
-   hero.transform.gravity = vec2.new(0,1)
+   HERO = entity()
+   HERO:addComponent(transform):addComponent(meatbag):addComponent(player):addComponent(camera):addComponent(inv)
+   HERO.transform:Move(vec2.new((2 ^ MAP.max_depth) / 2 * BLOCK_SIZE - 100 + 8 - 50,
+      (2 ^ MAP.max_depth) / 2 * BLOCK_SIZE - 100))
+   HERO.transform.gravity = vec2.new(0, 1)
 
    -- Want to know how to make an entity? Look at https://github.com/davidmedin/pd_swords
 end
@@ -128,14 +88,14 @@ end
 -- ============================== Canvas context setup
 
 function DrawBackground()
-   hero.camera:activate()
-   map:draw()
+   HERO.camera:activate()
+   MAP:draw()
 end
 
 gfx.setColor(gfx.kColorWhite)
 gfx.setBackgroundColor(gfx.kColorBlack)
 gfx.setImageDrawMode(gfx.kDrawModeCopy)
-gfx.setFont(waku25)
+gfx.setFont(WAKU25)
 gfx.sprite.setBackgroundDrawingCallback(DrawBackground)
 
 
@@ -143,21 +103,21 @@ gfx.sprite.setBackgroundDrawingCallback(DrawBackground)
 -- ============================== Update function
 
 function playdate.update()
-   
+
    gfx.clear()
-   
+
    -- ========= Updating ==========
-   
-   for k,entity in pairs(entities) do
+
+   for k, entity in pairs(ENTITIES) do
       for i, component in pairs(entity) do
          if component.update ~= nil then
             component:update()
          end
       end
    end
-   
+
    -- Apply Velocities
-   for k,entity in ipairs(entities) do
+   for k, entity in ipairs(ENTITIES) do
       if entity.transform ~= nil then
 
          -- Use MoveCollide if has a meatbag (which has a sprite).
@@ -171,10 +131,10 @@ function playdate.update()
    end
 
    --========== Drawing ===========
-   hero.camera:activate()
+   HERO.camera:activate()
    gfx.sprite.update()
-   for k,entity in pairs(entities) do
-      for i,component in pairs(entity) do
+   for k, entity in pairs(ENTITIES) do
+      for i, component in pairs(entity) do
          if component.draw ~= nil and component.visible == true then
             component:draw()
          end
@@ -182,27 +142,8 @@ function playdate.update()
    end
 
    --===================UI DRAWING===========--
-   draw_ui()
-   -- =========== Display DoMsg ===========
-   do
-      gfx.pushContext()
-      gfx.setImageDrawMode(gfx.kDrawModeFillWhite)
-
-      local msg_prog = 0
-      local offset = vec2.new(17,17)
-      for k,v in pairs(msg) do
-         gfx.drawText(v,0+offset.x,msg_prog+offset.y)
-         msg_prog += 17
-      end
-      msg = {}
-      
-      gfx.popContext()
-   end
+   DRAW_UI()
 
    -- Update timer
    playdate.timer.updateTimers()
-
-   -- ====== Update crank acceleration
-   local change = playdate.getCrankChange()
-   crank_vel = change
 end

@@ -4,7 +4,7 @@
     file : items.lua
 ]]
 
-local icons = weak_store() -- the icons for each
+local icons = WEAK_STORE() -- the icons for each
 -- BEWARE! this by default should be the name of your item class!
 -- Otherwise, you need to override the get_icon() function of 'item'.
 icons:set("pick", function() return gfx.image.new("images/pick.pdi") end )
@@ -12,10 +12,16 @@ icons:set("stone", function() return gfx.image.new("images/stone-icon.pdi") end 
 icons:set("gold", function() return gfx.image.new("images/gold-icon.pdi") end )
 
 local next_item_id = 1
--- Requires self.name to be set!
+--- Requires self.name to be set!
+---@class item : component
+---@field name string
+---@field id integer
+item=nil
 class("item").extends(component)
+---@param ent entity
+---@param init_func fun(self:item)
 function item:init(ent,init_func)
-    if __debug then assert(init_func and type(init_func == "function"),"Item creation requires an init function.") end
+    if __DEBUG then assert(init_func and type(init_func == "function"),"Item creation requires an init function.") end
     item.super.init(self)
 
     self.id = next_item_id
@@ -23,7 +29,7 @@ function item:init(ent,init_func)
 
     init_func(self)
     self.icon = icons:get(self.name)
-    if __debug then assert(self.icon, "failed to load icon '"..self.name.."'.") end
+    if __DEBUG then assert(self.icon, "failed to load icon '"..self.name.."'.") end
 end
 function item:on_use()
     print("Attemped to call 'on_use()' on item '" .. self.name.. "'!")
@@ -45,62 +51,60 @@ end
     
 ]]
 
-
-items = enum { -- all must be item function name without '_item'
-    "pick",
-    "stone",
-    "gold"   
-}
-block_item_map = enum_map(block_kind,items)
 --= =========== Helper functions
 
 -- Gets the position of the block that will be changed by the player
+---@return vec2
 local function select_block_pos()
-    local block_pos = button_dir()    
-    local hero_grid = vec2.new(math.ceil(hero.transform.pos.x / 20), math.ceil(hero.transform.pos.y/ 20)) + block_pos
+    local block_pos = BUTTON_DIR()
+    local hero_grid = vec2.new(math.ceil(HERO.transform.pos.x / 20), math.ceil(HERO.transform.pos.y/ 20)) + block_pos
     return hero_grid
 end
+---@param map quadtree
+---@param inv inv
 local function map_gather(map,inv)
     local node_pos = select_block_pos()
 
     -- copied from map:change, but different
     local node,parent = map:create_get_node(node_pos)
 
-    if node.kind ~= block_kind.air then
-        inv:add_item(entity():add(item, _G[table.keyOfValue(block_kind,node.kind) .. "_item"]  ))
+    if node.kind ~= BLOCK_KIND.air then
+        local tmp = table.keyOfValue(BLOCK_KIND,node.kind) .. "_ITEM"
+        inv:add_item(entity():add(item, _G[ string.upper( tmp ) ]  ))
     end
-    
-    node.kind = block_kind.air
-    node:changed_kind()
+
+    node.kind = BLOCK_KIND.air
+    node:changed_kind(node.kind)
 
     map:collapse_from_node(node)
 end
 
+---@param kind block_kind
 local function action_change(kind)
     local hero_grid = select_block_pos()
 
-    map:change(hero_grid,kind)
+    MAP:change(hero_grid,kind)
 end
 --============
 
-function pick_item(self) -- self is an item class.
+function PICK_ITEM(self) -- self is an item class.
     self.name = "pick"
-    self.kind = block_kind.air
+    self.kind = BLOCK_KIND.air
     self.on_use = function(self)
-        map_gather(map,self.inv)
+        map_gather(MAP,self.inv)
         --action_change(self.kind)
     end
 end
 
-function stone_item(self)
+function STONE_ITEM(self)
     self.name = "stone"
-    self.kind = block_kind.stone
+    self.kind = BLOCK_KIND.stone
     self.on_use = function(self)
         action_change(self.kind)
     end
 end
-function gold_item(self)
-    self.kind = block_kind.gold
+function GOLD_ITEM(self)
+    self.kind = BLOCK_KIND.gold
     self.name = "gold"
     self.on_use = function(self)
         action_change(self.kind)

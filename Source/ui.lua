@@ -1,11 +1,12 @@
 -- file variables
-local imgui_width = screen_size.x * 0.30
+local imgui_width = SCREEN_SIZE.x * 0.30
 local control_layers = 0
 local font_size = 15
 local hide_ui = true
 
 -- Enums
-imgui_item_kind = {
+---@enum imgui_item_kind
+IMGUI_ITEM_KIND = {
     button=1,
     integer=2,
     float=3,
@@ -14,16 +15,22 @@ imgui_item_kind = {
 }
 
 -- ================ Playdate Menu
-menu = pd.getSystemMenu()
+local menu = pd.getSystemMenu()
 local in_menu = false
 
+---@class gui
+---@field super Object
+---@field pos vec2
+---@field size vec2
+---@field imgui pd_gridview
+gui=nil
 class("gui").extends()
 function gui:init(pos,size)
     gui.super.init(self)
 
-    if __debug then assert(pos.x,pos.y) end
+    if __DEBUG then assert(pos.x,pos.y) end
     self.pos = pos
-    self.size = size or vec2.new(imgui_width,screen_size.y)
+    self.size = size or vec2.new(imgui_width,SCREEN_SIZE.y)
     self.imgui = pd.ui.gridview.new(0,40)
     self.defer_drop_down = false -- funny property
     self.selected_down = false
@@ -49,7 +56,7 @@ function gui:init(pos,size)
             gfx.setLineWidth(2)
             local item = nil
             if #self.content == 0 then
-                item = {name="*empty*",kind=imgui_item_kind.text}
+                item = {name="*empty*",kind=IMGUI_ITEM_KIND.text}
             else
                 item = self.content[row]
             end
@@ -61,25 +68,25 @@ function gui:init(pos,size)
                 gfx.drawRoundRect(x,y,width,height,5)
 
                 gfx.setImageDrawMode(gfx.kDrawModeFillBlack)
-                if item.kind == imgui_item_kind.integer or item.kind == imgui_item_kind.float  then
-                    gfx.drawTextInRect(item.name .. " : " .. item.value,x,y,width,height,nil,nil,kTextAlignment.center,waku15)
+                if item.kind == IMGUI_ITEM_KIND.integer or item.kind == IMGUI_ITEM_KIND.float  then
+                    gfx.drawTextInRect(item.name .. " : " .. item.value,x,y,width,height,nil,nil,kTextAlignment.center,WAKU15)
                 else
-                    gfx.drawTextInRect(item.name,x,y,width,height,nil,nil,kTextAlignment.center,waku15)
+                    gfx.drawTextInRect(item.name,x,y,width,height,nil,nil,kTextAlignment.center,WAKU15)
                 end
             elseif selected then
                 select_gfx(true)
                 gfx.fillRoundRect(x,y,width,height,5)
-                if item.kind == imgui_item_kind.integer or item.kind == imgui_item_kind.float  then
-                    gfx.drawTextInRect(item.name .. " : " .. item.value,x,y,width,height,nil,nil,kTextAlignment.center,waku15)
+                if item.kind == IMGUI_ITEM_KIND.integer or item.kind == IMGUI_ITEM_KIND.float  then
+                    gfx.drawTextInRect(item.name .. " : " .. item.value,x,y,width,height,nil,nil,kTextAlignment.center,WAKU15)
                 else 
-                    gfx.drawTextInRect(item.name,x,y,width,height,nil,nil,kTextAlignment.center,waku15)
+                    gfx.drawTextInRect(item.name,x,y,width,height,nil,nil,kTextAlignment.center,WAKU15)
                 end
             else
                 select_gfx(false)
-                if item.kind == imgui_item_kind.integer or item.kind == imgui_item_kind.float  then
-                    gfx.drawTextInRect(item.name .. " : " .. item.value,x,y,width,height,nil,nil,kTextAlignment.center,waku15)
+                if item.kind == IMGUI_ITEM_KIND.integer or item.kind == IMGUI_ITEM_KIND.float  then
+                    gfx.drawTextInRect(item.name .. " : " .. item.value,x,y,width,height,nil,nil,kTextAlignment.center,WAKU15)
                 else
-                    gfx.drawTextInRect(item.name,x,y,width,height,nil,nil,kTextAlignment.center,waku15)
+                    gfx.drawTextInRect(item.name,x,y,width,height,nil,nil,kTextAlignment.center,WAKU15)
                 end
             end
 
@@ -98,16 +105,16 @@ end
 function gui:add_item(name,kind,...)
     local args = {...}
     local item = {name=name,kind=kind}
-    if item.kind == imgui_item_kind.button then
+    if item.kind == IMGUI_ITEM_KIND.button then
         item.func = args[1]
         item.arb = args[2]
     end
-    if item.kind == imgui_item_kind.integer or item.kind == imgui_item_kind.float then
+    if item.kind == IMGUI_ITEM_KIND.integer or item.kind == IMGUI_ITEM_KIND.float then
         item.func = args[1]
         item.value = args[2] or 0
     end
-    if item.kind == imgui_item_kind.drop_down then
-        if __debug then assert(type(args[1]) == "table") end
+    if item.kind == IMGUI_ITEM_KIND.drop_down then
+        if __DEBUG then assert(type(args[1]) == "table") end
         item.options = args[1]
     end
     table.insert(self.content, item)
@@ -148,7 +155,7 @@ function gui:draw()
         -- Create new UI
         self.drop_down = gui(vec2.new(imgui_width,y), vec2.new(imgui_width,#item.options*(font_size+2)  + 4))
         for k,v in ipairs(item.options) do -- populate with data
-            self.drop_down:add_item(v.name,imgui_item_kind.button,v.func,k)
+            self.drop_down:add_item(v.name,IMGUI_ITEM_KIND.button,v.func,k)
         end
         -- become the interactee
         self.drop_down:push_controls(true)
@@ -174,7 +181,7 @@ function gui:push_controls(drop_down)
         leftButtonUp = function()
             local section,row,column = self.imgui:getSelection()
             local item = self.content[row]
-            if item.kind == imgui_item_kind.integer or item.kind == imgui_item_kind.float then
+            if item.kind == IMGUI_ITEM_KIND.integer or item.kind == IMGUI_ITEM_KIND.float then
                 item.value -= 1
                 item.func(item.value)
             end
@@ -182,7 +189,7 @@ function gui:push_controls(drop_down)
         rightButtonUp = function()
             local section,row,column = self.imgui:getSelection()
             local item = self.content[row]
-            if item.kind == imgui_item_kind.integer or item.kind == imgui_item_kind.float then
+            if item.kind == IMGUI_ITEM_KIND.integer or item.kind == IMGUI_ITEM_KIND.float then
                 item.value += 1
                 item.func(item.value)
             end
@@ -191,7 +198,7 @@ function gui:push_controls(drop_down)
         cranked = function(change,acceleratedChange)
             local section,row,column = self.imgui:getSelection()
             local item = self.content[row]
-            if item.kind == imgui_item_kind.float then
+            if item.kind == IMGUI_ITEM_KIND.float then
                 item.value += acceleratedChange * 0.01 -- subject to change
                 item.func(item.value)
             end
@@ -205,15 +212,15 @@ function gui:push_controls(drop_down)
             -- Do action. Do the function in imgui_context
             local section,row,column = self.imgui:getSelection()
             local item = self.content[row]
-            if item.kind == imgui_item_kind.button then
+            if item.kind == IMGUI_ITEM_KIND.button then
                 item.func(item.arb)
-            elseif item.kind == imgui_item_kind.drop_down then
+            elseif item.kind == IMGUI_ITEM_KIND.drop_down then
                 self.defer_drop_down = true
             end
             if drop_down == true then
                 pd.inputHandlers.pop()
                 control_layers -= 1
-                get_imgui().drop_down = nil
+                GET_IMGUI().drop_down = nil
             end
         end,
 
@@ -221,7 +228,7 @@ function gui:push_controls(drop_down)
             if drop_down then
                 pd.inputHandlers.pop()
                 control_layers -= 1
-                get_imgui().drop_down = nil
+                GET_IMGUI().drop_down = nil
             end
         end
     }, true ) -- totally override controls.
@@ -229,13 +236,13 @@ end
 
 local imgui = gui(vec2.new(0,0))
 
-function get_imgui()
+function GET_IMGUI()
     return imgui
 end
-function imgui_add_item(name,kind,...)
+function IMGUI_ADD_ITEM(name,kind,...)
     imgui:add_item(name,kind,...)
 end
-function draw_ui()
+function DRAW_UI()
     if not hide_ui then
         imgui:draw()
     end

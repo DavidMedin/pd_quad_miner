@@ -1,5 +1,11 @@
 import "rot_math.lua"
 
+---@class transform : component
+---@field pos vec2
+---@field offset vec2
+---@field rot number
+---@field scale number
+transform=nil
 class("transform",
       {
          -- pos,rot,scale,offset,

@@ -1,3 +1,5 @@
+---@class camera : component
+camera=nil
 class("camera",{}).extends(component)
 
 function camera:init(entity)
@@ -7,8 +9,8 @@ function camera:init(entity)
 end
 
 function camera:activate()
-    local transform = self.entity.transform.pos
-    gfx.setDrawOffset(-transform.x + screen_size.x/2,-transform.y + screen_size.y/2)
+    local transform = self.entity:get "transform" .pos
+    gfx.setDrawOffset(-transform.x + SCREEN_SIZE.x/2,-transform.y + SCREEN_SIZE.y/2)
 end
 
 function camera:deactivate()

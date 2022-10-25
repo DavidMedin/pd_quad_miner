@@ -1,3 +1,18 @@
+---@class input_listener
+---@field aDown boolean
+---@field aUp boolean
+---@field aOnDown fun()|nil
+---@field bDown boolean
+---@field bUp boolean
+---@field upDown boolean
+---@field upUp boolean
+---@field downDown boolean
+---@field downUp boolean
+---@field leftDown boolean
+---@field leftUp boolean
+---@field rightDown boolean
+---@field rightUp boolean
+
 local input_listeners = {}
 setmetatable(input_listeners, {__mode = "v"})
 
@@ -8,15 +23,17 @@ setmetatable(input_listeners, {__mode = "v"})
     will change with input. Cool!
 ]]
 
-function new_input_listener()
-    new_tab = {}
+---@return input_listener
+function NEW_INPUT_LISTENER()
+    local new_tab = {}
     table.insert(input_listeners,new_tab)
     return new_tab
 end
 
 
 -- Gets the dpad as a vector. (Only one button can be pressed)
-function button_dir()
+---@return vec2
+function BUTTON_DIR()
     local butt = {pd.buttonIsPressed(pd.kButtonUp),
           pd.buttonIsPressed(pd.kButtonDown),
           pd.buttonIsPressed(pd.kButtonRight),
@@ -42,6 +59,7 @@ function button_dir()
     return block_pos
  end
  
+ local b_timer
  local hero_control_handles = {
     
  
@@ -98,10 +116,10 @@ function button_dir()
             v.upDown = true
         end
         
-        if b_timer ~= nil or hero.transform.colliding == false then return end
+        if b_timer ~= nil or HERO.transform.colliding == false then return end
         b_timer = pd.timer.new(125, function() b_timer = nil end)
         b_timer.updateCallback = function(timer)
-            hero.transform.accel -= vec2.new(0,6)
+            HERO.transform.accel -= vec2.new(0,6)
         end
     end,
     upButtonUp = function()
@@ -125,7 +143,7 @@ function button_dir()
  -- NOTE! : main.lua's Menu will override these controls!
  pd.inputHandlers.push(hero_control_handles)
 
- function reset_input()
+ function RESET_INPUT()
     hero_control_handles.upButtonUp()
     hero_control_handles.downButtonUp()
     hero_control_handles.AButtonUp()

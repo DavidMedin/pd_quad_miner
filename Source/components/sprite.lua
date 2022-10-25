@@ -1,4 +1,8 @@
 -- A sprite derivitive that 'hooks' that component's transform.
+---@class compsprite : pd_sprite
+---@field super pd_sprite
+---@field component component
+compsprite=nil
 class("compsprite",{component}).extends(gfx.sprite)
 function compsprite:init(component,image)
    compsprite.super.init(self)
@@ -16,8 +20,9 @@ function compsprite:init(component,image)
    self.component = component
 end
 function compsprite:update()
-   gfx.sprite.update(self)
-   local trans = self.component.entity.transform
+   compsprite.super.update(self)
+   local trans = self.component.entity:get"transform"
+   assert(trans)
    local pos = trans:GetTranslation()
    self:moveTo(pos.x,pos.y)
    self:setRotation( trans:GetRotation() )

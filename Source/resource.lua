@@ -36,7 +36,7 @@
 
 --================= Weak Storage
 -- Stores weak refs, distributes strong refs
-function weak_store()
+function WEAK_STORE()
     return {
         objects = setmetatable({}, {__mode='v'}),
         funcs = {},
@@ -48,7 +48,7 @@ function weak_store()
             assert(self.funcs[name] ~= nil, "Attempted to get resource that doesn't have a function.")
             if self.objects[name] == nil then
                 local strong_ref = self.funcs[name]()
-                if __debug then assert("Failed to load resource '"..name.."'!") end
+                if __DEBUG then assert("Failed to load resource '"..name.."'!") end
                 self.objects[name] = strong_ref
                 return strong_ref
             end

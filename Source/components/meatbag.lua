@@ -1,4 +1,11 @@
+local hero_img = gfx.image.new("images/hero.pdi")
+
 -- prototype of meatbag 'type'
+---@class meatbag : component
+---@field health integer
+---@field invuln boolean
+---@field invuln_time integer milliseconds
+meatbag=nil
 class("meatbag",
 	  {
 	     health=100,
@@ -15,8 +22,8 @@ function meatbag:init(entity)
    self.sprite = compsprite(self,hero_img)
    -- set the sprite's collision rectangle
    self.sprite:setCollideRect( 0,0,self.sprite:getSize() )
-   self.sprite:setGroups({collide_group.hero})
-   self.sprite:setCollidesWithGroups(collide_group.stone)
+   self.sprite:setGroups({COLLIDE_GROUP.hero})
+   self.sprite:setCollidesWithGroups(COLLIDE_GROUP.stone)
    
    -- Create collidable for the meatbag
    self.polygon = CreateRect(16,16)
@@ -29,7 +36,7 @@ end
 function meatbag:draw()
 
    -- a meatbag needs to have a transform to draw
-   if self.entity.transform == nil then
+   if self.entity:get"transform" == nil then
       print("Meatbag entity doesn't have component!")
 
       -- early return
@@ -39,7 +46,6 @@ end
 
 function meatbag:Damage(damage)
    if self.invuln == false then
-      domsg("Hit!")
       self.health -= damage
       if self.health <= 0 then
          self.entity:Kill()

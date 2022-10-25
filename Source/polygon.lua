@@ -1,4 +1,8 @@
-class("polygon", { points,visible=false } ).extends()
+---@class polygon
+---@field super Object
+---@field visible boolean
+polygon=nil
+class("polygon", { visible=false } ).extends()
 function polygon:init(points,...)
    polygon.super.init(self)
    -- allow for a table input or points as seperate inputs.

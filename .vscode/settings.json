@@ -2,6 +2,13 @@
     "Lua.diagnostics.globals": [
         "import",
         "class",
-        "component"
+        "playdate",
+        "pd",
+        "gfx",
+        "geom",
+        "vec2"
+    ],
+    "Lua.workspace.library": [
+        "Source/playdate.lua"
     ]
 }
