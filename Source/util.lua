@@ -47,3 +47,46 @@ if __debug then
    assert(enu.jim == 2, "failed enum test")
    assert(enu.sword == 3, "failed enum test")
 end
+
+
+function enum_map(src_1,src_2)
+   local map = {}
+   for k,v in pairs(src_1) do
+      for k2,v2 in pairs(src_2) do
+         if k == k2 then
+            map[v] = v2
+         end
+      end
+   end
+   return map
+end
+
+if __debug then
+   -- tests for enum_map
+   local enum1 = enum {
+      "yolo",
+      "gun",
+      "stone",
+      "rose"
+   }
+   local enum2 = enum {
+      "gun",
+      "water",
+      "board",
+      "table",
+      "rose"
+   }
+
+   local map = enum_map(enum1,enum2)
+
+   assert(map[enum1.gun] == 1, "failed enum test")
+   assert(map[enum1.gun] == enum2.gun, "failed enum test")
+   assert(map[enum1.rose] == enum2.rose, "failed enum test")
+   
+end
+
+function table.keyOfValue(tabl,value)
+   for k,v in pairs(tabl) do
+      if value == v then return k end
+   end
+end

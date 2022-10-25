@@ -16,7 +16,7 @@ function player:init(entity)
         if self.entity.inv then
             local item = self.entity.inv:get_selected_item()
             if item then
-                item.item:on_use()
+                item.item.item:on_use()
             end
         end
     end

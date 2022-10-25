@@ -1,11 +1,13 @@
 entities = {}
-class("component",{entity=nil,visible=true}).extends(Object)
+
+
+class("component",{entity=nil,visible=true}).extends()
 function component:init(entity) -- Parent is the relationship between component to entity.
    component.super.init(self)
    self.entity = entity
 end
 
-class("entity", {}).extends(Object)
+class("entity", {}).extends()
 function entity:init()
    entity.super.init(self)
    table.insert(entities, self)

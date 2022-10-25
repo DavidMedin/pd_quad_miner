@@ -20,11 +20,18 @@ function inv:init(ent)
     self.show_inv = false
 
     -- for each new inventory, create a pickaxe, stone_item, and gold_item
-    self.items = { entity():add(item,pick_item),entity():add(item,stone_item), entity():add(item,gold_item) }
+    self.items = { }--,{item=entity():add(item,stone_item),count=1}, {item=entity():add(item,gold_item),count=1} }
+    -- Do not be confused!
+    -- In order to access the item, it is self.items[self.selected_item or whatever].item.item !
+
     self.selected_item = 1
     self.gui = pd.ui.gridview.new()
     self.gui:setNumberOfSections(1)
-    self.gui:setNumberOfColumns(3)
+    if #self.items == 0 then
+        self.gui:setNumberOfColumns(1)
+    else
+        self.gui:setNumberOfColumns(#self.items)
+end
     self.gui:setNumberOfRows(1)
 
     self.border_size = property {
@@ -59,6 +66,8 @@ function inv:init(ent)
     self.cell_padding <<= {1,1,0,0}
     self.border_width = 3
 
+    self:add_item(entity():add(item,pick_item)) -- Create item.
+
     imgui_add_item("inv-bord",imgui_item_kind.integer,function(new_val)
         self.border_size <<= new_val
      end,3)
@@ -76,10 +85,11 @@ function inv:init(ent)
             local border_offset = math.floor(#self.border_size/2)
             gfx.drawRoundRect(x+border_offset,y+border_offset,width-border_offset*2,height-border_offset*2,4)
 
-            local item = self.items[column]
+            local item = self.items[column].item
             local img_w,img_h = item.item.icon:getSize()
             if selected then gfx.setImageDrawMode(gfx.kDrawModeInverted) else gfx.setImageDrawMode(gfx.kDrawModeCopy) end
             
+            -- TODO: draw count of item
             item.item.icon:draw(x + width/2 - img_w/2,y+ height/2 - img_h/2)
         gfx.popContext()
     end--drawCell
@@ -88,6 +98,25 @@ end-- init
 function inv:get_selected_item()
     return self.items[self.selected_item]
 end
+
+
+-- Please only give this function an item has one reference, thank you!
+function inv:add_item(item)
+    for k,v in ipairs(self.items) do
+        -- May want a stronger way of checking equality (for unique items)
+        if v.item.name == item.name then
+            v.count += 1
+            return
+        end
+    end
+
+    -- Item is not already in, push it.
+    item.item.inv = self
+    table.insert(self.items,{item=item,count=1})
+    self.gui:setNumberOfColumns(#self.items)
+end
+
+
 function inv:update_cell_size()
     local border_add = #self.border_size * 2
     -- local border_add = math.floor(#self.border_size/2) * 2
@@ -175,7 +204,7 @@ function inv:draw_indicator()
     gfx.setColor(gfx.kColorBlack)
     gfx.drawRoundRect(ind_pos.x,ind_pos.y,#ind_width,#ind_width,4)
 
-    local item = self.items[self.selected_item]
+    local item = self.items[self.selected_item].item
     item.item.icon:draw(ind_pos.x,ind_pos.y)
 end
 

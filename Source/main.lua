@@ -17,10 +17,17 @@ acos = function(a) return math.deg(math.acos(a)) end
 atan = function(a,b) return math.deg(math.atan(a,b)) end
 
 import "resource"
-block_kind = {
-   air = 0,
-   stone = 1,
-   gold = 2,
+import "util"
+
+-- block_kind = {
+--    air = 0,
+--    stone = 1,
+--    gold = 2,
+-- }
+block_kind = enum {
+   "air",
+   "stone",
+   "gold"
 }
 
 collide_group = {
@@ -45,7 +52,6 @@ hero_img = gfx.image.new("images/hero.pdi")
    TODO: Scenes
    TODO: quadtree chunk loading-unloading
 ]]
-import "util"
 import "ui"
 import "ecs"
 import "components/items"
