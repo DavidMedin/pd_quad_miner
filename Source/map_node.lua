@@ -24,7 +24,7 @@ function map_node:on_deepest(pos,width)
     -- Debug ID
     self.id = next_id
     next_id += 1
-    
+
     self.sprite = gfx.sprite.new()
     self.sprite:moveTo(pos.x,pos.y)
 

@@ -5,6 +5,7 @@ ENTITIES = {}
 ---@field super Object
 ---@field entity entity
 ---@field visible boolean ### I do not know what this does.
+---@operator call(entity): component
 component = nil
 class("component",{entity=nil,visible=true}).extends()
 ---Creates a component
@@ -16,6 +17,7 @@ end
 
 ---@class entity : Object
 ---@field super Object
+---@operator call:entity
 entity=nil
 class("entity", {}).extends()
 

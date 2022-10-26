@@ -5,7 +5,7 @@ local ind_pos = vec2.new(SCREEN_SIZE.x-ind_width,SCREEN_SIZE.y-ind_width)
 -- Resources
 ---@class inv : component
 ---@field show_inv boolean
----@field items {item: entity, count: number}
+---@field items {item: entity, count: number,txt_size:vec2}
 ---@field selected_item integer
 ---@field gui pd_gridview
 ---@field cell_size integer[]
@@ -18,9 +18,7 @@ function inv:init(ent)
     self.show_inv = false
 
     -- for each new inventory, create a pickaxe, stone_item, and gold_item
-    self.items = { }--,{item=entity():add(item,stone_item),count=1}, {item=entity():add(item,gold_item),count=1} }
-    -- Do not be confused!
-    -- In order to access the item, it is self.items[self.selected_item or whatever].item.item !
+    self.items = { }
 
     self.selected_item = 1
     self.gui = pd.ui.gridview.new()
@@ -60,12 +58,16 @@ function inv:init(ent)
             local border_offset = math.floor(self.border_size/2)
             gfx.drawRoundRect(x+border_offset,y+border_offset,width-border_offset*2,height-border_offset*2,4)
 
-            local item = self.items[column].item
+            local entry = self.items[column]
+            local item = entry.item
             local img_w,img_h = item.item.icon:getSize()
             if selected then gfx.setImageDrawMode(gfx.kDrawModeInverted) else gfx.setImageDrawMode(gfx.kDrawModeCopy) end
             
             -- TODO: draw count of item
             item.item.icon:draw(x + width/2 - img_w/2,y+ height/2 - img_h/2)
+            gfx.setImageDrawMode(gfx.kDrawModeNXOR)
+
+            WAKU10:drawText(tostring(entry.count),x + width/2 - img_w/2 + (self.content_size[1] - entry.txt_size.x),y+ height/2 - img_h/2 + (self.content_size[2]-entry.txt_size.y))
         gfx.popContext()
     end--drawCell
 end-- init
@@ -104,14 +106,36 @@ function inv:add_item(item)
         -- May want a stronger way of checking equality (for unique items)
         if v.item:get"item".name == item:get"item".name then
             v.count += 1
+            v.txt_size.x = WAKU10:getTextWidth(v.count)
             return
         end
     end
 
     -- Item is not already in, push it.
     item:get"item".inv = self
-    table.insert(self.items,{item=item,count=1})
+    table.insert(self.items,{item=item,count=1,txt_size= vec2.new( WAKU10:getTextWidth("1"),WAKU10:getHeight()) })
+
     self.gui:setNumberOfColumns(#self.items)
+end
+
+---@param item_name string
+function inv:remove_item(item_name)
+    for k,v in pairs(self.items) do
+        if v.item:get"item".name == item_name then
+            v.count -= 1;
+            if v.count == 0 then
+                local new_item_count = #self.items - 1
+                if new_item_count == 0 then new_item_count = 1 end
+                self.gui:setNumberOfColumns(new_item_count)
+
+                self.selected_item = 0 -- Require user input to change item.
+
+                table.remove(self.items,k)
+            else
+                v.txt_size.x = WAKU10:getTextWidth(v.count)
+            end
+        end
+    end
 end
 
 
@@ -155,6 +179,7 @@ function inv:get_control()
         end,
         AButtonDown = function()
             local section,row,column = self.gui:getSelection()
+            if column < 1 or column > #self.items then return end
             self.selected_item = column
             self:close_inv()
         end,
@@ -202,8 +227,10 @@ function inv:draw_indicator()
     gfx.setColor(gfx.kColorBlack)
     gfx.drawRoundRect(ind_pos.x,ind_pos.y,ind_width,ind_width,4)
 
-    local item = self.items[self.selected_item].item
-    item.item.icon:draw(ind_pos.x,ind_pos.y)
+    if self.selected_item ~= 0 and #self.items ~= 0 then
+        local item = self.items[self.selected_item].item
+        item.item.icon:draw(ind_pos.x,ind_pos.y)
+    end
 end
 
 

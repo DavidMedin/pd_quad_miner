@@ -16,6 +16,9 @@ local next_item_id = 1
 ---@class item : component
 ---@field name string
 ---@field id integer
+---@field inv inv
+---@field on_use fun(self:item)
+---@field kind block_kind
 item=nil
 class("item").extends(component)
 ---@param ent entity
@@ -34,22 +37,6 @@ end
 function item:on_use()
     print("Attemped to call 'on_use()' on item '" .. self.name.. "'!")
 end
-
-
--- ====================== ITEM IMPLEMENTATIONS
-
---[[
-    Available methods:
-    required:
-    optional:
-        on_use()
-
-    Available fields:
-    required:
-    optional:
-        inv
-    
-]]
 
 --= =========== Helper functions
 
@@ -76,38 +63,51 @@ local function map_gather(map,inv)
     node.kind = BLOCK_KIND.air
     node:changed_kind(node.kind)
 
+
     map:collapse_from_node(node)
 end
 
 ---@param kind block_kind
-local function action_change(kind)
+---@param inv inv
+local function action_change(kind,inv)
+    
     local hero_grid = select_block_pos()
-
-    MAP:change(hero_grid,kind)
+    
+    _ = MAP:change(hero_grid,kind)
+    -- Get the item name of the block.
+    local item_name = table.keyOfValue(BLOCK_KIND,kind)
+    if item_name == nil then return end -- If the block mined doesn't have an item.
+    inv:remove_item(item_name) -- remove from inventory.
 end
 --============
 
+---@param self item
 function PICK_ITEM(self) -- self is an item class.
     self.name = "pick"
     self.kind = BLOCK_KIND.air
-    self.on_use = function(self)
-        map_gather(MAP,self.inv)
-        --action_change(self.kind)
+    self.on_use = function(item)
+        map_gather(MAP,item.inv)
     end
 end
 
+---@param self item
 function STONE_ITEM(self)
     self.name = "stone"
     self.kind = BLOCK_KIND.stone
-    self.on_use = function(self)
-        action_change(self.kind)
+
+    ---@param item item
+    self.on_use = function(item)
+        action_change(item.kind, item.inv)
     end
 end
+---@param self item
 function GOLD_ITEM(self)
     self.kind = BLOCK_KIND.gold
     self.name = "gold"
-    self.on_use = function(self)
-        action_change(self.kind)
+
+    ---@param item item
+    self.on_use = function(item)
+        action_change(item.kind, item.inv)
     end
 end
 

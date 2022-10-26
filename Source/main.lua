@@ -28,7 +28,6 @@ SCREEN_SIZE = vec2.new(400, 240)
    TODO: Sounds
    TODO: Better collisions
    TODO: text resizing
-   TODO: easily go between sprite and quad-tree line rendering
    TODO: Scenes
    TODO: quadtree chunk loading-unloading
 ]]

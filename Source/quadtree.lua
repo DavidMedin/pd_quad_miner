@@ -118,6 +118,7 @@ end
 ---@field max_depth integer
 ---@field root node
 ---@field node_type node
+---@operator call(block_kind): quadtree
 quadtree=nil
 class("quadtree", {
     max_depth = 4, -- 64 blocks
@@ -221,12 +222,15 @@ end
 ---Changes the kind of the specified block. May collapse the tree.
 ---@param pos vec2
 ---@param kind block_kind
+---@return block_kind
 function quadtree:change(pos,kind)
     local node,parent = self:create_get_node(pos)
+    local old_kind = node.kind
     node.kind = kind
     node:changed_kind(kind)
 
     self:collapse_from_node(node)
+    return old_kind
 end
 
 --- Draws the quadtree and its children.
