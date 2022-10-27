@@ -118,20 +118,35 @@ end
 ---@field max_depth integer
 ---@field root node
 ---@field node_type node
+---@field rect pd_rect
 ---@operator call(block_kind): quadtree
 quadtree=nil
 class("quadtree", {
     max_depth = 4, -- 64 blocks
 }).extends()
+
+---@param pos vec2
 ---@param kind block_kind
 ---@param node_type node Is really an class, not an object.
-function quadtree:init(kind,node_type)
+function quadtree:init(pos,kind,node_type)
     quadtree.super.init(self)
 
+    self.rect = geom.rect.new(pos.x,pos.y,2^self.max_depth * BLOCK_SIZE,2^self.max_depth * BLOCK_SIZE)
     self.node_type = node_type
     self.root = node_type(kind,nil)
-    self.root:recurse(vec2.new(0,0),0,self.max_depth,false, self.node_type.check_deep)
+    self.root:recurse(self:get_pos(),0,self.max_depth,false, self.node_type.check_deep)
 
+end
+
+---@return vec2
+function quadtree:get_pos()
+    return vec2.new(self.rect.x,self.rect.y)
+end
+
+--- Return the quadtree's position in blocks.
+---@return vec2
+function quadtree:get_pos_block()
+    return vec2.new(math.floor(self.rect.x/BLOCK_SIZE), math.floor(self.rect.y/BLOCK_SIZE))
 end
 
 -- uncompressed coordinate (start at (1,1). )
@@ -140,9 +155,11 @@ end
 ---@return node,node
 function quadtree:create_get_node(pos)
     if __DEBUG == true then assert(pos.x ~= 0 and pos.y ~= 0) end
+
     local size = 2 ^ self.max_depth
     local offset = vec2.new(0,0)
     local target_node = self.root
+
     ---@type node
     local target_parent = nil
     for x=0,self.max_depth do
@@ -162,7 +179,7 @@ function quadtree:create_get_node(pos)
         if target_node.kind ~= nil and x ~= self.max_depth then
             -- Time to generate resolution
             target_node:split(self.node_type)
-            self.root:recurse(vec2.new(0,0),0,self.max_depth,false, self.node_type.check_deep)
+            self.root:recurse(self:get_pos(),0,self.max_depth,false, self.node_type.check_deep)
 
         end
 
@@ -233,11 +250,6 @@ function quadtree:change(pos,kind)
     return old_kind
 end
 
---- Draws the quadtree and its children.
-function quadtree:draw()
-    self.root:recurse(vec2.new(0,0),0,self.max_depth,true,self.node_type.draw,0)
-    self.root:recurse(vec2.new(0,0),0,self.max_depth,true,self.node_type.draw,1)
-end
 
 -- 'Bubbles' up a collapse
 ---@param node node
@@ -277,5 +289,5 @@ function quadtree:collapse_from_node(node)
             break
         end
     end
-    self.root:recurse(vec2.new(0,0),0,self.max_depth,false, self.node_type.check_deep)
+    self.root:recurse(self:get_pos(),0,self.max_depth,false, self.node_type.check_deep)
 end

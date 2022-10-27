@@ -25,11 +25,11 @@ SCREEN_SIZE = vec2.new(400, 240)
 -- sword_img = gfx.image.new("images/sword.pdi")
 
 --[[
-   TODO: Sounds
    TODO: Better collisions
+   TODO: efficient terrain generation
+   TODO: Sounds
    TODO: text resizing
    TODO: Scenes
-   TODO: quadtree chunk loading-unloading
 ]]
 import "ui"
 import "ecs"
@@ -37,6 +37,7 @@ import "components/items"
 import "components/transform"
 import "polygon"
 import "components/meatbag"
+import "map_manager"
 import "components/sprite"
 import "components/player"
 import "components/camera"
@@ -62,23 +63,12 @@ IMGUI_ADD_ITEM("gravity", IMGUI_ITEM_KIND.button, function()
    -- Also somewhere is
 end)
 
---================ Generate Map=============
-MAP = quadtree(BLOCK_KIND.air, map_node)
-local map_size = 2 ^ MAP.max_depth
-for x = 1, 2 ^ MAP.max_depth do
-   for y = 1, 10 do
-      MAP:change(vec2.new(x, 2 ^ MAP.max_depth / 2 + y), BLOCK_KIND.stone)
-   end
-end
-
-ADD_SPHERE(MAP, vec2.new(map_size / 2, map_size / 2), 3)
-
 -- =================== Initialize Entities
 do
    HERO = entity()
    HERO:addComponent(transform):addComponent(meatbag):addComponent(player):addComponent(camera):addComponent(inv)
-   HERO.transform:Move(vec2.new((2 ^ MAP.max_depth) / 2 * BLOCK_SIZE - 100 + 8 - 50,
-      (2 ^ MAP.max_depth) / 2 * BLOCK_SIZE - 100))
+   HERO.transform:Move(vec2.new((2 ^ 4) / 2 * BLOCK_SIZE - 100 + 8 - 50,
+      (2 ^ 4) / 2 * BLOCK_SIZE - 100))
    HERO.transform.gravity = vec2.new(0, 1)
 
    -- Want to know how to make an entity? Look at https://github.com/davidmedin/pd_swords
@@ -88,7 +78,9 @@ end
 
 function DrawBackground()
    HERO.camera:activate()
-   MAP:draw()
+   -- MAP:draw()
+   UPDATE_CHUNKS(HERO.transform.pos)
+
 end
 
 gfx.setColor(gfx.kColorWhite)

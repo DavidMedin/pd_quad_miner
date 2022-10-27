@@ -40,55 +40,74 @@ end
 
 --= =========== Helper functions
 
+
 -- Gets the position of the block that will be changed by the player
+---@param pos vec2
 ---@return vec2
-local function select_block_pos()
+local function select_block_pos(pos)
     local block_pos = BUTTON_DIR()
-    local hero_grid = vec2.new(math.ceil(HERO.transform.pos.x / 20), math.ceil(HERO.transform.pos.y/ 20)) + block_pos
+    local hero_grid = vec2.new(math.ceil(pos.x / 20), math.ceil(pos.y/ 20)) + block_pos
     return hero_grid
 end
----@param map quadtree
+
+
+---@param pos vec2
 ---@param inv inv
-local function map_gather(map,inv)
-    local node_pos = select_block_pos()
+local function map_gather(pos,inv)
+    -- user input.
+    local node_pos = select_block_pos(pos)
 
-    -- copied from map:change, but different
-    local node,parent = map:create_get_node(node_pos)
-
-    if node.kind ~= BLOCK_KIND.air then
-        local tmp = table.keyOfValue(BLOCK_KIND,node.kind) .. "_ITEM"
-        inv:add_item(entity():add(item, _G[ string.upper( tmp ) ]  ))
+    local chunk = GET_CHUNK(node_pos)
+    if chunk then
+        local chunk_pos = chunk:get_pos()
+        local node,parent = chunk:create_get_node(node_pos - chunk:get_pos_block())
+    
+        if node.kind ~= BLOCK_KIND.air then
+            local tmp = table.keyOfValue(BLOCK_KIND,node.kind) .. "_ITEM"
+            inv:add_item(entity():add(item, _G[ string.upper( tmp ) ]  ))
+        end
+    
+        node.kind = BLOCK_KIND.air
+        node:changed_kind(node.kind)
+    
+    
+        chunk:collapse_from_node(node)
+    else
+        print("failed at map_gather!",node_pos)
     end
-
-    node.kind = BLOCK_KIND.air
-    node:changed_kind(node.kind)
-
-
-    map:collapse_from_node(node)
 end
 
+
+---@param pos vec2
 ---@param kind block_kind
 ---@param inv inv
-local function action_change(kind,inv)
+local function action_change(pos,kind,inv)
+
+    --player position snapped to grid.
+    local hero_grid = select_block_pos(pos)
     
-    local hero_grid = select_block_pos()
-    
-    _ = MAP:change(hero_grid,kind)
-    -- Get the item name of the block.
-    local item_name = table.keyOfValue(BLOCK_KIND,kind)
-    if item_name == nil then return end -- If the block mined doesn't have an item.
-    inv:remove_item(item_name) -- remove from inventory.
+    local chunk = GET_CHUNK(hero_grid)
+    if __DEBUG then assert(chunk, "Attempted to place block into the void") end
+    if chunk then
+        chunk:change(hero_grid - chunk:get_pos_block(), kind)
+        -- Get the item name of the block.
+        local item_name = table.keyOfValue(BLOCK_KIND,kind)
+        if item_name == nil then return end -- If the block mined doesn't have an item.
+        inv:remove_item(item_name) -- remove from inventory.
+    end
 end
 --============
+
 
 ---@param self item
 function PICK_ITEM(self) -- self is an item class.
     self.name = "pick"
     self.kind = BLOCK_KIND.air
     self.on_use = function(item)
-        map_gather(MAP,item.inv)
+        map_gather(self.inv.entity:get"transform".pos, item.inv)
     end
 end
+
 
 ---@param self item
 function STONE_ITEM(self)
@@ -97,9 +116,11 @@ function STONE_ITEM(self)
 
     ---@param item item
     self.on_use = function(item)
-        action_change(item.kind, item.inv)
+        action_change(self.inv.entity:get"transform".pos, item.kind, item.inv)
     end
 end
+
+
 ---@param self item
 function GOLD_ITEM(self)
     self.kind = BLOCK_KIND.gold
@@ -107,7 +128,7 @@ function GOLD_ITEM(self)
 
     ---@param item item
     self.on_use = function(item)
-        action_change(item.kind, item.inv)
+        action_change(self.inv.entity:get"transform".pos, item.kind, item.inv)
     end
 end
 

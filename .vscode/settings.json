@@ -10,5 +10,12 @@
     ],
     "Lua.workspace.library": [
         "Source/playdate.lua"
-    ]
+    ],
+    "emeraldwalk.runonsave": {
+        "commands": [
+            {
+                "cmd": "pdc Source cbs.pdx"
+            }
+        ]
+    }
 }
