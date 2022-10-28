@@ -66,9 +66,9 @@ local function map_gather(pos,inv)
             local tmp = table.keyOfValue(BLOCK_KIND,node.kind) .. "_ITEM"
             inv:add_item(entity():add(item, _G[ string.upper( tmp ) ]  ))
         end
-    
+
         node.kind = BLOCK_KIND.air
-        node:changed_kind(node.kind)
+        node:changed_kind()
     
     
         chunk:collapse_from_node(node)
@@ -89,7 +89,15 @@ local function action_change(pos,kind,inv)
     local chunk = GET_CHUNK(hero_grid)
     if __DEBUG then assert(chunk, "Attempted to place block into the void") end
     if chunk then
-        chunk:change(hero_grid - chunk:get_pos_block(), kind)
+        local node,parent_node = chunk:create_get_node(hero_grid - chunk:get_pos_block())
+        if node.kind ~= BLOCK_KIND.air then
+            return
+        end
+
+        node.kind = kind
+        node:changed_kind()
+        chunk:collapse_from_node(node)
+        
         -- Get the item name of the block.
         local item_name = table.keyOfValue(BLOCK_KIND,kind)
         if item_name == nil then return end -- If the block mined doesn't have an item.

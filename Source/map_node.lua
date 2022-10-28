@@ -22,9 +22,14 @@ local next_id = 1
 -- Called when the node is now the deepest in the tree (has no children. This one should render now).
 function map_node:on_deepest(pos,width)
     -- Debug ID
+    if __DEBUG then assert(self.kind, "attepmt to on_deepest nil item") end
     self.id = next_id
     next_id += 1
 
+    if self.sprite then
+        self.sprite:remove()
+        self.sprite = nil
+    end
     self.sprite = gfx.sprite.new()
     self.sprite:moveTo(pos.x,pos.y)
 
@@ -62,13 +67,6 @@ function map_node:draw(pos,width,arb)
     -- IF arb is 1, then stuff, otherwise, air.
     if self.kind ~= BLOCK_KIND.air and arb == 1 then -- If not air and is time to draw matter
         local block_img = kind_images[self.kind]
-        -- if self.kind == block_kind.stone then
-        --     block_img = stone_img
-        -- elseif self.kind == block_kind.gold then
-        --     block_img = gold_img
-        -- else
-            -- print("uh oh : ", self.kind)
-        -- end
         if __DEBUG then assert(block_img, "Missing image for block kind!") end
 
         local save_mode = gfx.getImageDrawMode()

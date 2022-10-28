@@ -5,7 +5,7 @@ local font_size = 15
 local hide_ui = true
 
 -- Enums
----@enum imgui_item_kind
+---@enum gui_item_kind
 IMGUI_ITEM_KIND = {
     button=1,
     integer=2,
@@ -23,8 +23,15 @@ local in_menu = false
 ---@field pos vec2
 ---@field size vec2
 ---@field imgui pd_gridview
+---@field defer_drop_down boolean -- whether the drop_down should be destroyed.
+---@field selected_down boolean -- If the button to select the selected button is down.
+---@field content table -- ## Elaborate please
+---@operator call:gui
 gui=nil
 class("gui").extends()
+
+---@param pos vec2
+---@param size vec2
 function gui:init(pos,size)
     gui.super.init(self)
 
@@ -46,7 +53,17 @@ function gui:init(pos,size)
     -- Selection context
     self.imgui:setSelectedRow(1)
 
+    ---@param cell integer
+    ---@param section integer
+    ---@param row integer
+    ---@param column integer
+    ---@param selected boolean
+    ---@param x integer
+    ---@param y integer
+    ---@param width integer
+    ---@param height integer
     self.imgui.drawCell = function(cell,section, row, column, selected, x, y, width, height)
+        ---@param selected boolean
         local select_gfx = function(selected)
             -- LOCAL selected. Not drawCell Argument selected.
             if not selected then gfx.setColor(gfx.kColorWhite) else gfx.setColor(gfx.kColorBlack) end
@@ -102,6 +119,9 @@ end
 --float : func default_val
 --text : text
 --drop_down : {options}
+---@param name string
+---@param kind gui_item_kind
+---@param ... any
 function gui:add_item(name,kind,...)
     local args = {...}
     local item = {name=name,kind=kind}
@@ -123,29 +143,30 @@ end
 
 function gui:draw()
 
-    local draw_offset = {gfx.getDrawOffset()}
-    gfx.setDrawOffset(0,0)
-
-    gfx.fillRoundRect(self.pos.x,self.pos.y,self.size.x,self.size.y, 5)
     gfx.pushContext()
-        gfx.setColor(gfx.kColorBlack)
-        gfx.setLineWidth(3)
-        gfx.drawRoundRect(self.pos.x,self.pos.y,self.size.x,self.size.y,5)
+        gfx.setDrawOffset(0,0)
+        gfx.setColor(gfx.kColorWhite)
+        gfx.fillRoundRect(self.pos.x,self.pos.y,self.size.x,self.size.y, 5)
+        gfx.pushContext()
+            gfx.setColor(gfx.kColorBlack)
+            gfx.setLineWidth(3)
+            gfx.drawRoundRect(self.pos.x,self.pos.y,self.size.x,self.size.y,5)
+        gfx.popContext()
+
+        -- draw IMGUI to image
+        local frame = gfx.image.new(self.size.x,self.size.y)
+        gfx.pushContext(frame)
+            self.imgui:drawInRect(0,0,self.size.x,self.size.y)
+        gfx.popContext()
+
+        -- -- funny mods
+
+        -- -- draw IMGUI to screen
+        frame:draw(self.pos.x,self.pos.y)
+        
+
     gfx.popContext()
 
-    -- draw IMGUI to image
-    local frame = gfx.image.new(self.size.x,self.size.y)
-    gfx.pushContext(frame)
-        self.imgui:drawInRect(0,0,self.size.x,self.size.y)
-    gfx.popContext()
-
-    -- -- funny mods
-
-    -- -- draw IMGUI to screen
-    frame:draw(self.pos.x,self.pos.y)
-    
-
-    gfx.setDrawOffset(table.unpack(draw_offset))
 
     if self.defer_drop_down == true then
         local section,row,column = self.imgui:getSelection()
@@ -167,7 +188,7 @@ function gui:draw()
     if self.drop_down then self.drop_down:draw() end
 end
 
-
+---@param drop_down boolean|nil
 function gui:push_controls(drop_down)
     pd.inputHandlers.push( {
         -- Menu controls

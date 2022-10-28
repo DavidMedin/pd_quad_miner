@@ -7,6 +7,7 @@
 
 -- Size of blocks in pixels.
 BLOCK_SIZE = 20
+MAX_DEPTH = 4
 
 ---@class node
 ---@field super Object
@@ -62,30 +63,28 @@ function node:not_deepest()
 end
 
 ---A callback for when the kind has been changed.
----@param kind block_kind
-function node:changed_kind(kind)
+function node:changed_kind()
 end
 
 ---A function to recurse from this node to a max depth, calling a function and giving arb(itrary) to it.
 ---@param pos vec2
 ---@param depth integer
----@param max_depth integer
 ---@param last boolean --- Whether only the deepest nodes should have func called on them.
 ---@param func fun(self:node,pos:vec2,width:integer,arb:any)
 ---@param arb any
-function node:recurse(pos,depth,max_depth,last,func,arb)
-    local width = 2^max_depth / 2 ^depth * BLOCK_SIZE
+function node:recurse(pos,depth,last,func,arb)
+    local width = 2^MAX_DEPTH / 2 ^depth * BLOCK_SIZE
     --has children
     if self.kind == nil then
         for k,v in ipairs(self.children) do
             if k == 1 then
-                v:recurse(pos,depth+1, max_depth,last, func,arb)
+                v:recurse(pos,depth+1,last, func,arb)
             elseif k == 2 then
-                v:recurse(pos+vec2.new(width / 2,0),depth+1, max_depth,last, func,arb)
+                v:recurse(pos+vec2.new(width / 2,0),depth+1,last, func,arb)
             elseif k == 3 then
-                v:recurse(pos+vec2.new(0,width / 2),depth+1, max_depth,last, func,arb)
+                v:recurse(pos+vec2.new(0,width / 2),depth+1,last, func,arb)
             else
-                v:recurse(pos+vec2.new(width / 2,width / 2),depth+1, max_depth,last, func,arb)
+                v:recurse(pos+vec2.new(width / 2,width / 2),depth+1,last, func,arb)
             end
         end
 
@@ -115,14 +114,12 @@ end
 
 ---@class quadtree
 ---@field super Object
----@field max_depth integer
 ---@field root node
 ---@field node_type node
 ---@field rect pd_rect
 ---@operator call(block_kind): quadtree
 quadtree=nil
 class("quadtree", {
-    max_depth = 4, -- 64 blocks
 }).extends()
 
 ---@param pos vec2
@@ -131,10 +128,10 @@ class("quadtree", {
 function quadtree:init(pos,kind,node_type)
     quadtree.super.init(self)
 
-    self.rect = geom.rect.new(pos.x,pos.y,2^self.max_depth * BLOCK_SIZE,2^self.max_depth * BLOCK_SIZE)
+    self.rect = geom.rect.new(pos.x,pos.y,2^MAX_DEPTH * BLOCK_SIZE,2^MAX_DEPTH * BLOCK_SIZE)
     self.node_type = node_type
     self.root = node_type(kind,nil)
-    self.root:recurse(self:get_pos(),0,self.max_depth,false, self.node_type.check_deep)
+    self.root:recurse(self:get_pos(),0,false, self.node_type.check_deep)
 
 end
 
@@ -156,13 +153,13 @@ end
 function quadtree:create_get_node(pos)
     if __DEBUG == true then assert(pos.x ~= 0 and pos.y ~= 0) end
 
-    local size = 2 ^ self.max_depth
+    local size = 2 ^ MAX_DEPTH
     local offset = vec2.new(0,0)
     local target_node = self.root
 
     ---@type node
     local target_parent = nil
-    for x=0,self.max_depth do
+    for x=0,MAX_DEPTH do
         local children_index = 0
         if pos.x > offset.x + size/ (2^x) /2 then
             children_index += 2
@@ -176,15 +173,17 @@ function quadtree:create_get_node(pos)
             offset.y += size/(2^x)/2
         end
 
-        if target_node.kind ~= nil and x ~= self.max_depth then
+        if target_node.kind ~= nil and x ~= MAX_DEPTH then
             -- Time to generate resolution
             target_node:split(self.node_type)
-            self.root:recurse(self:get_pos(),0,self.max_depth,false, self.node_type.check_deep)
+
+            --TODO: Rid of this
+            self.root:recurse(self:get_pos(),0,false, self.node_type.check_deep)
 
         end
 
         -- continue
-        if x ~= self.max_depth then
+        if x ~= MAX_DEPTH then
             if __DEBUG == true then assert(target_node.kind == nil) end
             target_parent = target_node
             target_node = target_node.children[children_index]
@@ -201,12 +200,12 @@ end
 ---@param pos vec2
 ---@return node|nil,node,node
 function quadtree:get_node(pos)
-    local size = (2^self.max_depth)
+    local size = (2^MAX_DEPTH)
     local offset = vec2.new(0,0)
     local target_node = self.root
     ---@type node
     local target_parent = nil
-    for x=0,self.max_depth do
+    for x=0,MAX_DEPTH do
         local children_index = 0
         if pos.x > offset.x + size/(2^x)/2 then
             children_index += 2
@@ -220,12 +219,12 @@ function quadtree:get_node(pos)
             offset.y += size/(2^x)/2
         end
 
-        if target_node.kind ~= nil and x ~= self.max_depth then
+        if target_node.kind ~= nil and x ~= MAX_DEPTH then
             return nil,target_node,target_parent
         end
 
         -- continue
-        if x ~= self.max_depth then
+        if x ~= MAX_DEPTH then
             if __DEBUG == true then assert(target_node.kind == nil) end
             target_parent = target_node
             target_node = target_node.children[children_index]
@@ -244,8 +243,87 @@ function quadtree:change(pos,kind)
     local node,parent = self:create_get_node(pos)
     local old_kind = node.kind
     node.kind = kind
-    node:changed_kind(kind)
+    node:changed_kind()
 
+    self:collapse_from_node(node)
+    return old_kind
+end
+
+---@param depth integer
+---@param child_index integer
+---@return vec2 -- Offset in pixels
+local function get_child_offset(depth,child_index)
+    assert(child_index > 0 and child_index <= 4 and depth <= 3 and depth >= 0, "Bad input for get_child_index")
+    local child_size = (2^MAX_DEPTH) / (2^(depth+1)) * BLOCK_SIZE
+    if child_index == 1 then
+        return vec2.new(0,0)
+    elseif child_index == 2 then
+        return vec2.new(child_size,0)
+    elseif child_index == 3 then
+        return vec2.new(0,child_size)
+    else
+        return vec2.new(child_size,child_size)
+    end
+end
+
+
+--- TESTS for get_child_offset
+if __DEBUG then
+    assert(get_child_offset(0,1) == vec2.new(0,0), "Failed get_child_offset test #1")
+    assert(get_child_offset(0,2) == vec2.new(160,0), "Failed get_child_offset test #2")
+    assert(get_child_offset(0,3) == vec2.new(0,160), "Failed get_child_offset test #3")
+    assert(get_child_offset(0,4) == vec2.new(160,160), "Failed get_child_offset test #4")
+    assert(get_child_offset(1,1) == vec2.new(0,0), "Failed get_child_offset test #5")
+    assert(get_child_offset(1,2) == vec2.new(80,0), "Failed get_child_offset test #6")
+    assert(get_child_offset(1,3) == vec2.new(0,80), "Failed get_child_offset test #7")
+    assert(get_child_offset(1,4) == vec2.new(80,80), "Failed get_child_offset test #8")
+    
+    assert(get_child_offset(2,4) == vec2.new(40,40), "Failed get_child_offset test #9")
+    assert(get_child_offset(3,4) == vec2.new(20,20), "Failed get_child_offset test #10")
+end
+
+--- A verbose version of change, for speed.
+---@param kind block_kind
+---@param ... integer
+---@return block_kind
+function quadtree:change_v(kind,...)
+    local indices = {...}
+    local node = self.root
+    local pos = self:get_pos()
+    local depth = 0
+
+    --- # Size of a child (in pixels) of the block of depth 'depth'
+    local child_size = 0
+    for k,v in ipairs(indices) do
+        child_size = (2^MAX_DEPTH) / (2^(depth+1)) * BLOCK_SIZE
+        if node.children == nil then
+            -- Make children (sex)
+            node:split(self.node_type)
+            -- Now, node and its children need a check_deep
+            -- Except, I know what it will be. gottem
+            node:not_deepest()
+            node.deep = nil -- false is set by node:split, so set to nil.
+            for child_i,node_v in ipairs(node.children) do
+                local new_pos = pos + get_child_offset(depth,child_i)
+                node_v:on_deepest(new_pos,child_size)
+            end
+
+        end
+        node = node.children[v]
+        pos += get_child_offset(depth,v)
+        depth += 1
+    end
+
+    if node.children then
+        for k,v in ipairs(node.children) do
+            v:not_deepest()
+        end
+        node.children = nil
+    end
+    local old_kind = node.kind
+    node.kind = kind
+    node:on_deepest(pos,(2^MAX_DEPTH) / (2^depth) * BLOCK_SIZE)
+    node:changed_kind()
     self:collapse_from_node(node)
     return old_kind
 end
@@ -289,5 +367,5 @@ function quadtree:collapse_from_node(node)
             break
         end
     end
-    self.root:recurse(self:get_pos(),0,self.max_depth,false, self.node_type.check_deep)
+    self.root:recurse(self:get_pos(),0,false, self.node_type.check_deep)
 end

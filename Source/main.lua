@@ -26,7 +26,6 @@ SCREEN_SIZE = vec2.new(400, 240)
 
 --[[
    TODO: Better collisions
-   TODO: efficient terrain generation
    TODO: Sounds
    TODO: text resizing
    TODO: Scenes
@@ -37,12 +36,12 @@ import "components/items"
 import "components/transform"
 import "polygon"
 import "components/meatbag"
-import "map_manager"
 import "components/sprite"
 import "components/player"
 import "components/camera"
 import "components/inventory"
 import "quadtree"
+import "map_manager"
 import "map_node"
 import "map_gen"
 import "sounds"

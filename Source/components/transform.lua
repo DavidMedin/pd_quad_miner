@@ -5,6 +5,12 @@ import "rot_math.lua"
 ---@field offset vec2
 ---@field rot number
 ---@field scale number
+---@field parent entity|nil
+---@field children entity[]
+---@field vel vec2
+---@field accel vec2
+---@field gravity vec2
+---@field colliding boolean
 transform=nil
 class("transform",
       {
@@ -33,15 +39,17 @@ function transform:init(entity,parent)
    self:ComputeTransform()
 
    if self.parent ~= nil then
-      assert(self.parent.transform)
-      
-      self.parent.transform:AddChild(self)
+      local transform = self.parent--[[@as entity]]:get"transform"
+      if __DEBUG then assert(transform) end
+      ---@cast transform transform -- guaranteed by __DEBUG
+      transform:AddChild(self)
    end
 
 end
 
+---@param force vec2
 function transform:ApplyForce(force)
-   assert(force,force.x,force.y)
+   if __DEBUG then assert(force,force.x,force.y) end
 
    self.accel += force / self.mass
 end
@@ -64,6 +72,7 @@ function transform:update()
 end
 
 -- Go to global position
+---@param g_pos vec2
 function transform:GetGlobal(g_pos)
 
    -- Get the inverse of the final trans for this object
@@ -93,7 +102,7 @@ function transform:ComputeFinalTransform()
    -- If we have a parent, then use their transform.
    if self.parent ~= nil then
       -- parent *must* have a transform component
-      assert(self.parent.transform)
+      if __DEBUG then assert(self.parent.transform) end
 
       self.final_trans *= self.parent.transform.final_trans
    end
@@ -104,29 +113,37 @@ function transform:ComputeFinalTransform()
    -- parent?)
    if self.entity:hasComponent(meatbag) then
       local pos = self:GetTranslation()
-      self.entity.meatbag.sprite:moveTo( GetPoint(pos) )
+      self.entity:get"meatbag".sprite:moveTo( GetPoint(pos) )
    end
 
    -- Update Children's Final Transform
    for i,child in pairs(self.children) do
-      assert(child.transform)
-      child.transform:ComputeFinalTransform()
+      local transform = child:get"transform"
+      if __DEBUG then assert(transform) end
+      ---@cast transform transform
+
+      transform:ComputeFinalTransform()
    end
 end
 
 -- Moves this position and its children.
+---@param vec vec2
 function transform:MoveCollide(vec)
    
    -- Vec must have these
-   assert(vec)
-   assert(vec.x)
-   assert(vec.y)
+   local meatbag = self.entity:get"meatbag"
+   if __DEBUG then
+      assert(vec)
+      assert(vec.x)
+      assert(vec.y)
 
-   assert(self.entity.meatbag)
+      assert(meatbag)
+   end
+   ---@cast meatbag meatbag
 
    -- Apply to our parameters
    local goal = self.pos + vec
-   local actualX,actualY,collisions,length = self.entity.meatbag.sprite:moveWithCollisions(goal.x,goal.y)
+   local actualX,actualY,collisions,length = meatbag.sprite:moveWithCollisions(goal.x,goal.y)
    local actual = vec2.new(actualX,actualY)
    
    self.pos = actual
@@ -161,26 +178,31 @@ function transform:Move(vec)
 
    -- Apply to our parameters
    self.pos += vec
-   if self.entity.meatbag ~= nil then
-      self.entity.meatbag.sprite:moveTo( GetPoint(self.pos) )
+   local meatbag  = self.entity:get"meatbag"
+   if meatbag ~= nil then
+      meatbag.sprite:moveTo( GetPoint(self.pos) )
    end
 
    -- Update our transform, final transform, and children's final transforms.
    self:ComputeTransform()
 end
 
+---@param vec vec2
 function transform:Offset(vec)
-   assert(vec)
-   assert(vec.x)
-   assert(vec.y)
+   if __DEBUG then
+      assert(vec)
+      assert(vec.x)
+      assert(vec.y)
+   end
 
    self.offset = vec
    self:ComputeTransform()
 end
 
 -- Rotates this transform and its children.
+---@param deg number
 function transform:Rotate(deg)
-   assert(deg)
+   if __DEBUG then assert(deg) end
 
    self.rot = (self.rot + deg) % 360
 
@@ -189,10 +211,13 @@ function transform:Rotate(deg)
 end
 
 -- Adds child transform.
+---@param child transform
 function transform:AddChild(child)
    -- These should exist
-   assert(child)
-   assert(child.entity)
+   if __DEBUG then
+      assert(child)
+      assert(child.entity)
+   end
 
    --Add the child
    table.insert(self.children, child.entity)

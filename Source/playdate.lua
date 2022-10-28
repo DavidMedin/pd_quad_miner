@@ -84,6 +84,60 @@ function vec2.new(x,y)end
 ---@return number,number
 function vec2:unpack()end
 function vec2:normalize() end
+---@return number
+function vec2:magnitude() end
+
+
+---@class pd_transform
+---@operator mul(pd_transform): pd_transform
+---@operator mul(vec2): vec2
+---@operator mul(pd_point): pd_point
+geom.affineTransform=nil
+
+---@param m11 number
+---@param m12 number
+---@param m21 number
+---@param m22 number
+---@param tx number
+---@param ty number
+---@return pd_transform
+function geom.affineTransform.new(m11,m12,m21,m22,tx,ty) end
+---@return pd_transform
+function geom.affineTransform.new() end
+---@return pd_transform
+function geom.affineTransform:copy() end
+function geom.affineTransform:invert() end
+function geom.affineTransform:reset() end
+---@param af pd_transform
+function geom.affineTransform:concat(af) end
+---@param dx number
+---@param dy number
+function geom.affineTransform:translate(dx,dy) end
+---@param dx number
+---@param dy number
+---@return pd_transform
+function geom.affineTransform:translatedBy(dx,dy) end
+---@param sx number
+---@param sy? number
+function geom.affineTransform:scale(sx,sy) end
+---@param sx number
+---@param sy? number
+---@return pd_transform
+function geom.affineTransform:scaledBy(sx,sy) end
+---@param angle number
+---@param x? number
+---@param y? number
+function geom.affineTransform:rotate(angle,x,y) end
+---@param angle number
+---@param point? pd_point
+---@return pd_transform
+function geom.affineTransform:rotatedBy(angle,point)end
+---@param p pd_point
+function geom.affineTransform:transformPoint(p) end
+---@param p pd_point
+---@return pd_point
+function geom.affineTransform:transformedPoint(p) end
+
 
 ---@class pd_rect
 ---@field x number

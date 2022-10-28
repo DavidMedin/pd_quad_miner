@@ -1,12 +1,11 @@
 ---@deprecated
 local screen_frame = gfx.image.new(SCREEN_SIZE.x,SCREEN_SIZE.y)
-local max_depth = 4
 ---@type quadtree[][]
 local chunks = {}
 
 ---@type number
 local chunk_size = nil -- Set in another file.
-local chunk_block_count = 2^max_depth
+local chunk_block_count = 2^MAX_DEPTH
 
 --- Either loads from a file or creates a chunk
 ---@param pos vec2 In chunk cooridiates.
@@ -24,12 +23,9 @@ local function load_chunk(pos)
     local chunk = chunks[pos.x][pos.y]
 
     -- Some generation garbage.
-    local map_size = 2 ^ chunk.max_depth
-    for x = 1, 2 ^ chunk.max_depth do
-        for y = 1, 10 do
-        chunk:change(vec2.new(x, 2 ^ chunk.max_depth / 2 + y), BLOCK_KIND.stone)
-        end
-    end
+    chunk:change_v(BLOCK_KIND.stone,3)
+    chunk:change_v(BLOCK_KIND.stone,4)
+    local map_size = 2 ^ MAX_DEPTH
     
     ADD_SPHERE(chunk, vec2.new(map_size / 2, map_size / 2), 3)
 end
@@ -45,6 +41,9 @@ local function destroy_chunk(pos)
         print ("failed to open "..file_name)
     else
         -- file:write("test")
+        -- Kill all sprites
+        local chunk = chunks[pos.x][pos.y]
+        chunk.root:recurse(chunk:get_pos(),0,false,chunk.node_type.not_deepest)
         chunks[pos.x][pos.y] = nil
         file:close()
     end
@@ -56,7 +55,7 @@ local loader_rect = geom.rect.new(0,0,SCREEN_SIZE.x + load_margin, SCREEN_SIZE.y
 --- Load, destroys, and modifies chunks accordingly.
 ---@param pos vec2 The position the loader_rect should be at now.
 function UPDATE_CHUNKS(pos)
-    chunk_size = 2^max_depth * BLOCK_SIZE
+    chunk_size = 2^MAX_DEPTH * BLOCK_SIZE
 
     loader_rect.x = pos.x - loader_rect.width / 2
     loader_rect.y = pos.y - loader_rect.height / 2
@@ -99,7 +98,9 @@ function UPDATE_CHUNKS(pos)
     for x=load_points[1].x,load_points[2].x do
         for y=load_points[1].y, load_points[3].y do
             if chunks[x] == nil or chunks[x][y] == nil then
+
                 load_chunk(vec2.new(x,y))
+                
             end
         end
     end
@@ -110,13 +111,13 @@ function UPDATE_CHUNKS(pos)
     for kx,x in pairs(chunks) do
         for ky,y in pairs(x) do
             local pos = y:get_pos()
-            y.root:recurse(pos,0,y.max_depth,true,y.node_type.draw,0)
+            y.root:recurse(pos,0,true,y.node_type.draw,0)
         end
     end
     for kx,x in pairs(chunks) do
         for ky,y in pairs(x) do
             local pos = y:get_pos()
-            y.root:recurse(pos,0,y.max_depth,true,y.node_type.draw,1)
+            y.root:recurse(pos,0,true,y.node_type.draw,1)
         end
     end
     --#endregion

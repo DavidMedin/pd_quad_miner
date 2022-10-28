@@ -2,7 +2,7 @@
 ---@param pos vec2
 ---@param radius number
 function ADD_SPHERE(map, pos, radius)
-    local side = 2^map.max_depth
+    local side = 2^MAX_DEPTH
     local map_pos = map:get_pos()
     assert(side >= pos.x + radius and pos.x-radius >= 0 and
           side >= pos.y + radius and pos.y-radius >= 0, "bad arguments to add_sphere")
