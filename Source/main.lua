@@ -131,6 +131,8 @@ function playdate.update()
       end
    end
 
+   pd.drawFPS(0,0)
+
    --===================UI DRAWING===========--
    DRAW_UI()
 

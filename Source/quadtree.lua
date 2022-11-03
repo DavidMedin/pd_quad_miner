@@ -66,6 +66,7 @@ end
 function node:changed_kind()
 end
 
+
 ---A function to recurse from this node to a max depth, calling a function and giving arb(itrary) to it.
 ---@param pos vec2
 ---@param depth integer
@@ -117,6 +118,7 @@ end
 ---@field root node
 ---@field node_type node
 ---@field rect pd_rect
+---@field img pd_image
 ---@operator call(block_kind): quadtree
 quadtree=nil
 class("quadtree", {
@@ -129,10 +131,12 @@ function quadtree:init(pos,kind,node_type)
     quadtree.super.init(self)
 
     self.rect = geom.rect.new(pos.x,pos.y,2^MAX_DEPTH * BLOCK_SIZE,2^MAX_DEPTH * BLOCK_SIZE)
+
+    local img_size = 2^MAX_DEPTH*BLOCK_SIZE -- one exponent calculation.
+    self.img = gfx.image.new(img_size,img_size)
     self.node_type = node_type
     self.root = node_type(kind,nil)
     self.root:recurse(self:get_pos(),0,false, self.node_type.check_deep)
-
 end
 
 ---@return vec2
@@ -236,6 +240,7 @@ function quadtree:get_node(pos)
 end
 
 ---Changes the kind of the specified block. May collapse the tree.
+--- Call quadtree:bake() after this!
 ---@param pos vec2
 ---@param kind block_kind
 ---@return block_kind
@@ -368,4 +373,19 @@ function quadtree:collapse_from_node(node)
         end
     end
     self.root:recurse(self:get_pos(),0,false, self.node_type.check_deep)
+end
+
+-- Is an expensive function, don't call it too often.
+--- Call this function after you are done manipulating the chunk!
+function quadtree:bake()
+    gfx.pushContext(self.img)
+    local pos = vec2.new(0,0)
+    self.root:recurse(pos,0,true,self.node_type.draw,0)
+    self.root:recurse(pos,0,true,self.node_type.draw,1)
+    gfx.popContext()
+end
+
+function quadtree:draw()
+    local pos = self:get_pos()
+    self.img:draw(pos.x,pos.y)
 end

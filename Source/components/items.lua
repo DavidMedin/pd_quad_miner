@@ -72,6 +72,7 @@ local function map_gather(pos,inv)
     
     
         chunk:collapse_from_node(node)
+        chunk:bake()
     else
         print("failed at map_gather!",node_pos)
     end
@@ -97,6 +98,7 @@ local function action_change(pos,kind,inv)
         node.kind = kind
         node:changed_kind()
         chunk:collapse_from_node(node)
+        chunk:bake()
         
         -- Get the item name of the block.
         local item_name = table.keyOfValue(BLOCK_KIND,kind)

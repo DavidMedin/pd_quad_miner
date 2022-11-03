@@ -28,6 +28,8 @@ local function load_chunk(pos)
     local map_size = 2 ^ MAX_DEPTH
     
     ADD_SPHERE(chunk, vec2.new(map_size / 2, map_size / 2), 3)
+
+    chunk:bake() -- draw to the internal image.
 end
 
 --- Writes the chunk to the filesystem and destroys it.
@@ -42,6 +44,7 @@ local function destroy_chunk(pos)
     else
         -- file:write("test")
         -- Kill all sprites
+        print("destroying chunk")
         local chunk = chunks[pos.x][pos.y]
         chunk.root:recurse(chunk:get_pos(),0,false,chunk.node_type.not_deepest)
         chunks[pos.x][pos.y] = nil
@@ -108,16 +111,17 @@ function UPDATE_CHUNKS(pos)
     --#endregion
 
     --#region Draw Chunks
+    -- for kx,x in pairs(chunks) do
+    --     for ky,y in pairs(x) do
+    --         local pos = y:get_pos()
+    --         y.root:recurse(pos,0,true,y.node_type.draw,0)
+    --     end
+    -- end
     for kx,x in pairs(chunks) do
         for ky,y in pairs(x) do
-            local pos = y:get_pos()
-            y.root:recurse(pos,0,true,y.node_type.draw,0)
-        end
-    end
-    for kx,x in pairs(chunks) do
-        for ky,y in pairs(x) do
-            local pos = y:get_pos()
-            y.root:recurse(pos,0,true,y.node_type.draw,1)
+            y:draw()
+            -- local pos = y:get_pos()
+            -- y.root:recurse(pos,0,true,y.node_type.draw,1)
         end
     end
     --#endregion
